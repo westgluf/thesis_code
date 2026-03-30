@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
-python -m py_compile src/*.py tools/*.py
-echo "compile OK"
+python tools/guard_train_gbm.py
+echo "guard OK"

@@ -1,49 +1,36 @@
-AGENT RULES FOR THIS REPO (thesis_code_copy)
+# Agents Guidelines (thesis_code)
 
-Goal
-- Keep Section 6.2 codebase clean, reproducible, and regression-proof.
-- Any change must preserve (or improve) the risk metrics enforced by Guard.
+## Golden rule: never worsen metrics
+Before and after any change:
+1) run compile
+2) run smoke
+3) run guard
+If guard fails — rollback immediately.
 
-Golden rule
-- Run Guard before and after changes. If Guard fails, revert immediately.
+## Repro / determinism
+- Keep a fixed default config (configs/gbm_es95.yaml).
+- Keep seed controlled by config.
+- Do not change math/logic without an experiment plan.
 
-Mandatory commands
-- Compile: ./tools/compile.sh
-- Clean:   ./tools/clean.sh
-- Smoke:   ./tools/smoke.sh
-- Guard:   python tools/guard_train_gbm.py
+## Output contracts
+`src/train_deephedge_gbm.py` must produce:
+- results/gbm_deephedge/metrics_nn.json
+- results/gbm_deephedge/metrics_bs.json
+- results/gbm_deephedge/train_log.csv
+- results/gbm_deephedge/best_state.pt
+- results/gbm_deephedge/last_state.pt
+- results/gbm_deephedge/feature_norm.json
+- results/gbm_deephedge/arrays_debug.npz (optional but preferred)
 
-Definition of “done”
-- compile OK
-- smoke OK
-- guard PASS (no metric regressions vs baseline)
+## Structure targets (Section 6.2)
+- objectives.py: objectives (CVaR/ES/entropic)
+- world_gbm.py: data generation + split + feature normalization + save feature_norm.json
+- eval.py: metrics + plots + arrays_debug.npz + run_cfg.json
+- hedge_core.py: rollout + PL computation shared between training loop and runner
+- train_loop.py: pure training loop (no circular imports), returns best/last/log
 
-Change policy
-- Prefer large, clean edits (replace whole files) over fragile regex/patches.
-- Avoid circular imports. Shared logic must live in dedicated modules (e.g., hedge_core.py).
-- Keep train_deephedge_gbm.py as a thin runner:
-  - load config
-  - build data via world_gbm
-  - build model
-  - call train_loop
-  - call eval.save_eval_artifacts
-  - save run_cfg.json
-
-Reproducibility
-- Always seed via config.
-- Save artifacts to results/gbm_deephedge:
-  - metrics_bs.json, metrics_nn.json
-  - hist_pl_bs_vs_nn.png, tail_metrics_bs_vs_nn.png
-  - arrays_debug.npz (optional)
-  - feature_norm.json
-  - best_state.pt, last_state.pt
-  - train_log.csv
-
-No-shell-footguns
-- Do not print shell comments that start with # as commands.
-- Provide runnable bash blocks only.
-
-Style
-- Keep functions small.
-- Explicit names, no magic globals.
-- Validate inputs (NaN/Inf checks for feature norms).
+## Coding style
+- No zsh-triggering comments in terminal scripts.
+- Keep scripts in tools/ and make them executable.
+- Prefer full-file edits over fragile regex patches.
+- Always keep guard passing on main branch.
