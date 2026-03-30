@@ -1,0 +1,28 @@
+out_dir: "results/gbm_deephedge"
+
+data:
+  S0: 1.0
+  T: 1.0
+  n: 50
+  sigma_true: 0.2
+  sigma_bar: 0.2
+  lam_cost: 0.0
+  N_train: 5000
+  N_val: 1000
+  N_test: 2000
+  seed: 1234
+  K: 1.0
+
+objective:
+  alpha: 0.95
+
+train:
+  epochs: 60
+  batch_size: 2048
+  lr: 0.0003
+  weight_decay: 0.0
+  patience: 10
+
+model:
+  hidden: 128
+  depth: 4
