@@ -1,12 +1,12 @@
 from __future__ import annotations
-from dataclasses import dataclass
-from typing import Dict, Any, Tuple
+from typing import Any, Dict
 
-import json
-import os
+from pathlib import Path
 import numpy as np
 
+from src.logging_utils import write_json_file
 from src.models_gbm import simulate_gbm_discounted_paths
+from src.paths import feature_norm_path
 from src.payoff import payoff_call
 
 
@@ -38,11 +38,8 @@ def apply_feature_norm(F: np.ndarray, mu: np.ndarray, sd: np.ndarray) -> np.ndar
     return G
 
 
-def save_feature_norm_json(feature_norm: Dict[str, Any], out_dir: str) -> None:
-    os.makedirs(out_dir, exist_ok=True)
-    path = os.path.join(out_dir, "feature_norm.json")
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(feature_norm, f, indent=2)
+def save_feature_norm_json(feature_norm: Dict[str, Any], run_dir: str | Path) -> None:
+    write_json_file(feature_norm_path(run_dir), feature_norm)
 
 
 def make_gbm_dataset(

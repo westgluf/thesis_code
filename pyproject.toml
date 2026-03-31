@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "thesis-code"
+version = "0.1.0"
+description = "Experiment 6.2 GBM deep hedging thesis code"
+readme = "README_6_2.md"
+requires-python = ">=3.14"
+dependencies = [
+  "matplotlib",
+  "numpy",
+  "PyYAML",
+  "torch",
+  "tqdm",
+]
+
+[project.scripts]
+thesis-code-baseline-gbm = "src.run_gbm_baseline:main"
+thesis-code-train-gbm = "src.train_deephedge_gbm:main"
+thesis-code-smoke = "src.tools_cli:smoke_cli"
+thesis-code-guard = "src.tools_cli:guard_cli"
+
+[tool.setuptools.packages.find]
+include = ["src*"]

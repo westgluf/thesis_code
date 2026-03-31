@@ -7,7 +7,7 @@ import torch
 from src.hedge_core import compute_pl_torch, rollout_strategy
 
 
-TrainLog = List[Dict[str, float]]
+TrainLog = List[Dict[str, int | float]]
 
 _DATA_KEYS = (
     "F_tr",
@@ -113,7 +113,7 @@ def train_loop(
 
         train_log.append(
             {
-                "epoch": float(ep),
+                "epoch": int(ep),
                 "train_loss": float(total_loss) / float(max(num_batches, 1)),
                 "val_loss": float(val_loss),
                 "lr": float(optimizer.param_groups[0].get("lr", 0.0)),

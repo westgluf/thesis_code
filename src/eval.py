@@ -1,12 +1,17 @@
-import os
-import json
+from __future__ import annotations
+
+from pathlib import Path
+
 import numpy as np
 
+from src.logging_utils import write_json_file
 from src.metrics import summary_metrics
+from src.paths import arrays_debug_path, hist_plot_path, metrics_bs_path, metrics_nn_path, tail_plot_path
 from src.plots import plot_hist, plot_es_var_bars
 
+
 def save_eval_artifacts(
-    out_dir: str,
+    run_dir: str | Path,
     pl_bs,
     pl_nn,
     label_bs: str,
@@ -15,30 +20,31 @@ def save_eval_artifacts(
     lam_entropic: float = 1.0,
     arrays_debug: dict | None = None,
 ):
-    os.makedirs(out_dir, exist_ok=True)
+    out_dir = Path(run_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     m_bs = summary_metrics(pl_bs, alpha_list=alpha_list, lam_entropic=lam_entropic)
     m_nn = summary_metrics(pl_nn, alpha_list=alpha_list, lam_entropic=lam_entropic)
 
-    with open(os.path.join(out_dir, "metrics_bs.json"), "w") as f:
-        json.dump(m_bs, f, indent=2)
-    with open(os.path.join(out_dir, "metrics_nn.json"), "w") as f:
-        json.dump(m_nn, f, indent=2)
+    write_json_file(metrics_bs_path(out_dir), m_bs)
+    write_json_file(metrics_nn_path(out_dir), m_nn)
 
-    plot_hist(pl_bs, pl_nn, label_bs, label_nn, os.path.join(out_dir, "hist_pl_bs_vs_nn.png"))
-    plot_es_var_bars(m_bs, m_nn, alpha_list, os.path.join(out_dir, "tail_metrics_bs_vs_nn.png"), title="GBM: BS-delta vs Deep hedging")
+    plot_hist(pl_bs, pl_nn, label_bs, label_nn, hist_plot_path(out_dir))
+    plot_es_var_bars(
+        m_bs,
+        m_nn,
+        alpha_list,
+        tail_plot_path(out_dir),
+        title="GBM: BS-delta vs Deep hedging",
+    )
 
     if arrays_debug is not None:
-        try:
-            out_npz = os.path.join(out_dir, "arrays_debug.npz")
-            payload = {}
-            for k, v in arrays_debug.items():
-                if hasattr(v, "detach"):
-                    payload[k] = v.detach().cpu().numpy()
-                else:
-                    payload[k] = np.asarray(v)
-            np.savez(out_npz, **payload)
-        except Exception as e:
-            print("Warning: could not save arrays_debug.npz:", e)
+        payload = {}
+        for key, value in arrays_debug.items():
+            if hasattr(value, "detach"):
+                payload[key] = value.detach().cpu().numpy()
+            else:
+                payload[key] = np.asarray(value)
+        np.savez(arrays_debug_path(out_dir), **payload)
 
     return m_bs, m_nn

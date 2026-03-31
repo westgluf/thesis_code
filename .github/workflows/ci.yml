@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  experiment-6-2:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Clean
+        run: ./tools/clean.sh
+
+      - name: Compile
+        run: ./tools/compile.sh
+
+      - name: Smoke
+        run: ./tools/smoke.sh
+
+      - name: Guard
+        run: ./tools/guard.sh
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: experiment-6-2-results
+          path: |
+            results/gbm_baseline
+            results/gbm_deephedge
+            results/archive
