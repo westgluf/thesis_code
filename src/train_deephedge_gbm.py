@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import json
+import csv
 import torch
 import numpy as np
 from torch.optim import Adam
@@ -13,10 +14,26 @@ from src.bs import bs_call_price_discounted
 from src.strategies_delta import bs_delta_strategy_paths
 from src.costs_and_pl import pl_paths_proportional_costs
 from src.deep_hedging_model import MLPHedge
-from src.objectives import cvar_loss_from_pl
+from src.objectives import CVaRObjective
 from src.hedge_core import rollout_strategy, compute_pl_torch
 from src.train_loop import train_loop
 from src.eval import save_eval_artifacts
+
+
+def _save_training_artifacts(
+    out_dir: str,
+    best_state: dict[str, torch.Tensor],
+    last_state: dict[str, torch.Tensor],
+    train_log: list[dict[str, float]],
+) -> None:
+    torch.save(best_state, os.path.join(out_dir, "best_state.pt"))
+    torch.save(last_state, os.path.join(out_dir, "last_state.pt"))
+
+    with open(os.path.join(out_dir, "train_log.csv"), "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=["epoch", "train_loss", "val_loss", "lr", "w"])
+        writer.writeheader()
+        for row in train_log:
+            writer.writerow(row)
 
 
 def main() -> None:
@@ -49,13 +66,14 @@ def main() -> None:
     lr = float(get(cfg, "train.lr", 3e-4))
     wd = float(get(cfg, "train.weight_decay", 0.0))
     patience = int(get(cfg, "train.patience", 10))
-    grad_clip = float(get(cfg, "train.grad_clip", 1.0))
 
     hidden = int(get(cfg, "model.hidden", 128))
     depth = int(get(cfg, "model.depth", 4))
 
     out_dir = str(get(cfg, "out_dir", "results/gbm_deephedge"))
     os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "run_cfg.json"), "w") as f:
+        json.dump(cfg, f, indent=2)
 
     data_np = make_gbm_dataset(
         S0=S0,
@@ -96,34 +114,32 @@ def main() -> None:
 
     model = MLPHedge(in_dim=4, hidden=hidden, depth=depth).to(device)
 
-    w_es = torch.nn.Parameter(torch.tensor(0.0, device=device))
-    opt = Adam(list(model.parameters()) + [w_es], lr=lr, weight_decay=wd)
+    objective_fn = CVaRObjective(alpha=alpha_es).to(device)
+    optimizer = Adam(list(model.parameters()) + list(objective_fn.parameters()), lr=lr, weight_decay=wd)
 
-    def objective(pl: torch.Tensor) -> torch.Tensor:
-        return cvar_loss_from_pl(pl, w_es, alpha=alpha_es)
+    train_data = {
+        "F_tr": F_tr_t,
+        "S_tr": S_tr_t,
+        "Z_tr": Z_tr_t,
+        "F_va": F_va_t,
+        "S_va": S_va_t,
+        "Z_va": Z_va_t,
+        "p0_true_mc": p0_true_mc,
+        "lam_cost": lam_cost,
+    }
 
     best_state, last_state, train_log = train_loop(
         model=model,
-        objective=objective,
-        rollout_fn=rollout_strategy,
-        pl_fn=compute_pl_torch,
-        S_tr_t=S_tr_t,
-        Z_tr_t=Z_tr_t,
-        F_tr_t=F_tr_t,
-        S_va_t=S_va_t,
-        Z_va_t=Z_va_t,
-        F_va_t=F_va_t,
-        p0_true_mc=p0_true_mc,
-        lam_cost=lam_cost,
-        opt=opt,
+        optimizer=optimizer,
+        objective_fn=objective_fn,
+        data=train_data,
         epochs=epochs,
         batch_size=batch_size,
         patience=patience,
-        grad_clip=grad_clip,
-        out_dir=out_dir,
-        w_value_fn=lambda: float(w_es.detach().cpu().item()),
+        device=device,
         trange=trange,
     )
+    _save_training_artifacts(out_dir, best_state, last_state, train_log)
 
     model.load_state_dict(best_state)
     model.eval()
@@ -150,9 +166,6 @@ def main() -> None:
         lam_entropic=1.0,
         arrays_debug=arrays,
     )
-
-    with open(os.path.join(out_dir, "run_cfg.json"), "w") as f:
-        json.dump(cfg, f, indent=2)
 
     print(f"Saved results to: {out_dir}")
     print("BS-delta:", m_bs)
