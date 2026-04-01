@@ -13,7 +13,16 @@ data:
   seed: 1234
   K: 1.0
 
+features:
+  feature_set: "B"
+  sigma_in: 0.2
+
+benchmark:
+  training_regime: "oracle"
+  robust_sigmas: [0.15, 0.20, 0.25]
+
 objective:
+  name: "cvar"
   alpha: 0.95
 
 train:

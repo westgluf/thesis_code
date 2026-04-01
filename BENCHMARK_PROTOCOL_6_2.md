@@ -1,0 +1,221 @@
+# Section 6.2 GBM Benchmark Protocol
+
+- Objective:
+  - Compare classical Black-Scholes delta hedging and neural-network deep hedging for a European ATM call under proportional transaction costs and volatility misspecification.
+  - Keep the market model fixed in the primary benchmark so that misspecification enters only through the hedge construction, not through a changing test environment.
+  - Use the benchmark study as the publication-grade experiment; keep smoke and guard runs as lightweight engineering checks rather than as the statistical benchmark itself.
+
+- Fixed market and contract specification:
+  - Underlying dynamics: discounted GBM with zero rates/dividends, consistent with the current Section 6.2 code path.
+  - True data-generating volatility: `sigma_true = 0.20`.
+  - Initial spot: `S0 = 1.0`.
+  - Strike: `K = 1.0` so the option is ATM at inception.
+  - Maturity: `T = 1.0`.
+  - Hedging grid: `n = 50` rebalancing dates, with `t_k = kT/n` for `k = 0, ..., 50`.
+  - Payoff: discounted European call payoff `Z = (S_T - K)^+`.
+  - Primary premium convention for all strategies: use the same true option premium `p0 = BS_call_price(S0, K, T, sigma_true = 0.20)`.
+  - Rationale for the common premium: this isolates hedging performance from pricing error; otherwise a misspecified BS hedge would be penalized for both pricing and hedging.
+  - Optional appendix only: report a secondary sensitivity table using strategy-specific pricing inputs, but do not use that table for the main claims.
+
+- Scenario matrix:
+  - Common across all scenarios:
+    - Same contract, same GBM DGP, same time grid, same train/validation/test split sizes, same seed set, same model architecture, same optimizer, same stopping rule, and same evaluation code.
+    - Same test paths within a given seed for every strategy so that all method comparisons are paired.
+  - Cost levels:
+    - `lambda_cost in {0, 1e-4, 5e-4, 1e-3}`.
+  - Classical hedge scenarios:
+    - `BS(sigma_bar = 0.15)`.
+    - `BS(sigma_bar = 0.20)`.
+    - `BS(sigma_bar = 0.25)`.
+    - Evaluate each BS hedge under each `lambda_cost`.
+  - Deep hedge scenarios:
+    - `DH-oracle`: train only on paths generated with `sigma = 0.20`.
+    - `DH-robust`: train on an equally weighted volatility mixture `sigma in {0.15, 0.20, 0.25}`.
+    - Train a separate deep hedge model for each `lambda_cost` and training regime because the optimal control depends on trading cost.
+  - Seed grid:
+    - `seeds = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}`.
+  - Total benchmark size:
+    - Strategy evaluations per seed: `4 cost levels x (3 BS strategies + 2 deep strategies) = 20`.
+    - Neural-network trainings per seed: `4 cost levels x 2 training regimes = 8`.
+    - Full study: `200` evaluated strategy-seed-cost cells and `80` trained neural networks.
+
+- Data protocol:
+  - For each seed, generate a fresh independent dataset.
+  - Main benchmark sample sizes:
+    - `N_train = 50,000`.
+    - `N_val = 10,000`.
+    - `N_test = 100,000`.
+  - Reason for the large test set:
+    - `VaR99` and `ES99` are unstable on small test sets; `N_test = 100,000` gives about `1,000` observations in the worst `1%` tail per seed.
+  - Oracle dataset construction:
+    - Train/validation/test paths all come from `sigma_true = 0.20`.
+  - Robust dataset construction:
+    - Training set: equal-sized blocks from `sigma = 0.15`, `0.20`, and `0.25`.
+    - Validation set: equal-sized blocks from `sigma = 0.15`, `0.20`, and `0.25`.
+    - Test set: always generated only from `sigma_true = 0.20`.
+  - Feature normalization:
+    - Fit normalization constants on the training split only.
+    - Apply the fitted normalization to validation and test splits.
+    - Save `feature_norm.json` for every trained deep hedge run.
+  - Pairing rule:
+    - Within each seed, use the exact same test paths for all five evaluated strategies at a given cost level.
+
+- Training protocol:
+  - Hyperparameter selection:
+    - Tune architecture and optimizer settings once in a pilot stage.
+    - Freeze all hyperparameters before the 10-seed benchmark begins.
+    - Do not re-tune per seed, per cost, or per strategy.
+  - Deep hedge objective:
+    - Use a single pre-declared training objective for the whole study.
+    - Recommended primary objective: `CVaR / ES` at `alpha = 0.95`, matching the current Section 6.2 setup.
+  - Deep hedge optimization:
+    - Initialize every model from scratch for each `(seed, lambda_cost, training_regime)` cell.
+    - Use the same architecture, optimizer, learning-rate schedule, batch size, patience, and epoch cap across all deep runs.
+    - Select the final checkpoint by validation performance only.
+    - Save both `best_state.pt` and `last_state.pt`.
+  - Classical hedge:
+    - No training.
+    - Compute deltas on the same hedging grid using `sigma_bar in {0.15, 0.20, 0.25}`.
+  - Fairness rules:
+    - Use the same premium `p0` for all methods in the primary benchmark.
+    - Use the same transaction cost parameter during training and evaluation for each deep hedge run.
+    - Do not alter the dataset generation, P&L formula, or risk metric definitions across scenarios.
+
+- Evaluation protocol:
+  - Evaluate every strategy on the test split corresponding to its seed.
+  - Compute discounted pathwise P&L with proportional transaction costs using the same formula for all methods.
+  - Report the following pathwise summary metrics for each `(seed, lambda_cost, strategy)` cell:
+    - `mean_P&L`.
+    - `std_P&L`.
+    - `VaR95` of loss.
+    - `ES95` of loss.
+    - `VaR99` of loss.
+    - `ES99` of loss.
+  - Turnover definitions:
+    - Per-path turnover:
+      - `TO_i = |delta_{i,0}| + sum_{k=1}^{n-1} |delta_{i,k} - delta_{i,k-1}| + |delta_{i,n-1}|`.
+      - The final term closes the hedge to zero at maturity, matching the transaction-cost accounting.
+    - Scenario-level turnover summaries:
+      - `mean_turnover = N_test^{-1} sum_i TO_i`.
+      - `max_turnover = max_i TO_i`.
+      - `total_turnover = sum_i TO_i`.
+  - Comparison rule:
+    - Use paired seed-level comparisons because all methods share the same test paths within a seed.
+  - Primary method comparisons at each `lambda_cost`:
+    - `DH-oracle` vs `BS(sigma_bar = 0.20)`.
+    - `DH-robust` vs `BS(sigma_bar = 0.20)`.
+    - `DH-oracle` vs `BS(sigma_bar = 0.15)`.
+    - `DH-oracle` vs `BS(sigma_bar = 0.25)`.
+    - `DH-robust` vs `BS(sigma_bar = 0.15)`.
+    - `DH-robust` vs `BS(sigma_bar = 0.25)`.
+    - `DH-robust` vs `DH-oracle`.
+  - Sanity-check comparisons:
+    - `BS(0.20)` vs `BS(0.15)` and `BS(0.25)` to quantify the direct effect of volatility misspecification.
+    - `DH-oracle` vs `BS(0.20)` at `lambda_cost = 0` as a near-frictionless benchmark sanity check.
+
+- Reporting protocol:
+  - For every scenario and every metric, report across-seed:
+    - sample mean.
+    - standard error `stderr = sd / sqrt(10)` with `sd` computed using `ddof = 1`.
+    - `95%` confidence interval using the Student-`t` critical value for `9` degrees of freedom:
+      - `mean +/- 2.262 * stderr`.
+  - Use the seed as the experimental unit in all interval estimates and tests.
+  - Present both absolute metrics and paired differences versus the chosen comparator.
+  - Main tables:
+    - One table by `lambda_cost` with one row per strategy and columns for all P&L and turnover metrics.
+    - One pairwise-comparison table by `lambda_cost` reporting mean seed-level differences, standard errors, confidence intervals, and p-values.
+  - Main figures:
+    - P&L histogram or density overlay for representative scenarios.
+    - Tail-risk bar plots for `VaR95`, `ES95`, `VaR99`, and `ES99`.
+    - Turnover distribution plots.
+    - Error-bar plots across `lambda_cost` for the primary metrics.
+  - Ranking rule:
+    - Treat `ES99` and `ES95` as primary risk outcomes.
+    - Treat `std_P&L`, `mean_P&L`, and turnover metrics as secondary outcomes.
+  - Multiple testing:
+    - Pre-declare `ES99` and `ES95` as primary endpoints.
+    - For secondary pairwise tests, report raw p-values and Holm-adjusted p-values within each cost level.
+
+- Exact outputs to save:
+  - Benchmark root:
+    - `results/gbm_deephedge/benchmark_6_2/benchmark_spec.json`.
+    - `results/gbm_deephedge/benchmark_6_2/manifest.csv`.
+  - Per-seed dataset artifacts:
+    - `results/gbm_deephedge/benchmark_6_2/seed_{s}/dataset/t_grid.npy`.
+    - `results/gbm_deephedge/benchmark_6_2/seed_{s}/dataset/S_test.npy`.
+    - `results/gbm_deephedge/benchmark_6_2/seed_{s}/dataset/Z_test.npy`.
+    - `results/gbm_deephedge/benchmark_6_2/seed_{s}/dataset/data_config.json`.
+    - `results/gbm_deephedge/benchmark_6_2/seed_{s}/dataset/premium.json`.
+  - Per-scenario artifacts for every `(seed, lambda_cost, strategy)` cell:
+    - `run_cfg.json`.
+    - `metrics.json`.
+    - `pl_paths.npy`.
+    - `turnover_paths.npy`.
+    - `deltas_test.npy`.
+    - `arrays_debug.npz` with at least `S_test`, `Z_test`, `pl`, `turnover`, and `deltas`.
+    - `hist_pl.png`.
+    - `tail_metrics.png`.
+    - `turnover_hist.png`.
+  - Additional per-scenario artifacts for deep hedge cells only:
+    - `best_state.pt`.
+    - `last_state.pt`.
+    - `train_log.csv`.
+    - `feature_norm.json`.
+    - `train_curves.png`.
+  - Aggregate outputs:
+    - `results/gbm_deephedge/benchmark_6_2/aggregate/seed_level_metrics.csv`.
+    - `results/gbm_deephedge/benchmark_6_2/aggregate/seed_level_metrics.parquet`.
+    - `results/gbm_deephedge/benchmark_6_2/aggregate/scenario_summary.csv`.
+    - `results/gbm_deephedge/benchmark_6_2/aggregate/scenario_summary.tex`.
+    - `results/gbm_deephedge/benchmark_6_2/aggregate/pairwise_tests.csv`.
+    - `results/gbm_deephedge/benchmark_6_2/aggregate/pairwise_tests.tex`.
+    - `results/gbm_deephedge/benchmark_6_2/aggregate/plots/metric_vs_cost.png`.
+    - `results/gbm_deephedge/benchmark_6_2/aggregate/plots/turnover_vs_cost.png`.
+    - `results/gbm_deephedge/benchmark_6_2/aggregate/plots/tail_risk_vs_cost.png`.
+
+- Exact fields required in `metrics.json`:
+  - `seed`.
+  - `strategy`.
+  - `training_regime`.
+  - `sigma_true`.
+  - `sigma_bar`.
+  - `lambda_cost`.
+  - `premium`.
+  - `mean_PL`.
+  - `std_PL`.
+  - `VaR_loss_0.95`.
+  - `ES_loss_0.95`.
+  - `VaR_loss_0.99`.
+  - `ES_loss_0.99`.
+  - `mean_turnover`.
+  - `max_turnover`.
+  - `total_turnover`.
+  - `N_train`.
+  - `N_val`.
+  - `N_test`.
+
+- Statistical hypotheses to test:
+  - `H1`:
+    - At `lambda_cost > 0`, `DH-oracle` has lower `ES95` and `ES99` than `BS(sigma_bar = 0.20)` on the same seed-level test sets.
+  - `H2`:
+    - Under volatility misspecification, both `DH-oracle` and `DH-robust` have lower `ES95` and `ES99` than `BS(sigma_bar = 0.15)` and `BS(sigma_bar = 0.25)`.
+  - `H3`:
+    - `DH-robust` achieves lower or equal tail risk than `DH-oracle` at positive transaction costs without a statistically significant increase in turnover.
+  - `H4`:
+    - As `lambda_cost` increases, deep hedging reduces turnover more strongly than BS delta, indicating learned trading restraint under costs.
+  - `H5`:
+    - At `lambda_cost = 0` and `sigma_bar = 0.20`, `BS` and `DH-oracle` are statistically similar on `mean_PL` and tail-risk metrics, serving as a sanity check rather than a superiority claim.
+
+- Recommended statistical tests:
+  - For each fixed `lambda_cost`, test paired seed-level differences with a two-sided paired `t`-test as the main parametric analysis.
+  - Report the paired mean difference and its `95%` Student-`t` confidence interval.
+  - As a robustness check for the small sample size `n = 10`, also report the Wilcoxon signed-rank p-value.
+
+- Publication-ready interpretation rules:
+  - Make all claims from the aggregate seed-level results, not from a single seed.
+  - Do not claim superiority from overlapping histograms alone; require directionally consistent paired seed-level evidence.
+  - Distinguish clearly between:
+    - transaction-cost advantage.
+    - misspecification robustness.
+    - pure frictionless replication accuracy.
+  - Treat robustness as success only if gains in tail risk are not obtained by an unacceptable collapse in mean P&L.

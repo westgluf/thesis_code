@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import torch
-import numpy as np
+
 
 def compute_pl_torch(S: torch.Tensor, deltas: torch.Tensor, Z: torch.Tensor, p0: float, lam: float) -> torch.Tensor:
     dS = S[:, 1:] - S[:, :-1]
@@ -12,13 +14,13 @@ def compute_pl_torch(S: torch.Tensor, deltas: torch.Tensor, Z: torch.Tensor, p0:
     pl = -Z + p0 + gains - costs
     return pl
 
-def rollout_strategy(model, feats_base: torch.Tensor) -> torch.Tensor:
+
+def rollout_strategy(model: torch.nn.Module, feats_base: torch.Tensor) -> torch.Tensor:
     N, n, _ = feats_base.shape
-    deltas = []
-    delta_prev = torch.zeros((N, 1), device=feats_base.device)
+    deltas: list[torch.Tensor] = []
+    delta_prev = torch.zeros((N, 1), device=feats_base.device, dtype=feats_base.dtype)
     for k in range(n):
-        x = feats_base[:, k, :].clone()
-        x[:, 3:4] = delta_prev
+        x = torch.cat([feats_base[:, k, :], delta_prev], dim=1)
         delta_k = model(x)
         delta_k = torch.tanh(delta_k)
         deltas.append(delta_k)

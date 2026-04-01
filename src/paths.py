@@ -9,6 +9,9 @@ RESULTS_ROOT = Path("results")
 ARCHIVE_DIR = RESULTS_ROOT / "archive"
 DEFAULT_RUN_DIRNAME = "gbm_deephedge"
 BASELINE_DIRNAME = "gbm_baseline"
+BENCHMARK_DIRNAME = "benchmark_6_2"
+BENCHMARK_RUNS_DIRNAME = "runs"
+BENCHMARK_AGGREGATE_DIRNAME = "aggregate"
 
 
 def get_run_dir(cfg: Mapping[str, Any]) -> Path:
@@ -62,6 +65,94 @@ def train_log_path(run_dir: str | Path) -> Path:
 
 def run_cfg_path(run_dir: str | Path) -> Path:
     return Path(run_dir) / "run_cfg.json"
+
+
+def benchmark_root_dir(run_dir: str | Path) -> Path:
+    return Path(run_dir) / BENCHMARK_DIRNAME
+
+
+def benchmark_runs_dir(run_dir: str | Path) -> Path:
+    return benchmark_root_dir(run_dir) / BENCHMARK_RUNS_DIRNAME
+
+
+def benchmark_aggregate_dir(run_dir: str | Path) -> Path:
+    return benchmark_root_dir(run_dir) / BENCHMARK_AGGREGATE_DIRNAME
+
+
+def benchmark_run_dir(run_dir: str | Path, run_id: str) -> Path:
+    return benchmark_runs_dir(run_dir) / run_id
+
+
+def benchmark_spec_json_path(run_dir: str | Path) -> Path:
+    return benchmark_root_dir(run_dir) / "benchmark_spec.json"
+
+
+def seed_info_path(run_dir: str | Path) -> Path:
+    return Path(run_dir) / "seed_info.json"
+
+
+def run_meta_path(run_dir: str | Path) -> Path:
+    return Path(run_dir) / "run_meta.json"
+
+
+def metrics_summary_path(run_dir: str | Path) -> Path:
+    return Path(run_dir) / "metrics_summary.json"
+
+
+def pl_bs_array_path(run_dir: str | Path) -> Path:
+    return Path(run_dir) / "pl_bs.npy"
+
+
+def pl_nn_array_path(run_dir: str | Path) -> Path:
+    return Path(run_dir) / "pl_nn.npy"
+
+
+def turnover_bs_array_path(run_dir: str | Path) -> Path:
+    return Path(run_dir) / "turnover_bs.npy"
+
+
+def turnover_nn_array_path(run_dir: str | Path) -> Path:
+    return Path(run_dir) / "turnover_nn.npy"
+
+
+def train_curve_path(run_dir: str | Path) -> Path:
+    return Path(run_dir) / "curve_train_val_loss.png"
+
+
+def manifest_runs_json_path(run_dir: str | Path) -> Path:
+    return benchmark_aggregate_dir(run_dir) / "manifest_runs.json"
+
+
+def manifest_runs_csv_path(run_dir: str | Path) -> Path:
+    return benchmark_aggregate_dir(run_dir) / "manifest_runs.csv"
+
+
+def summary_rows_json_path(run_dir: str | Path) -> Path:
+    return benchmark_aggregate_dir(run_dir) / "summary_rows.json"
+
+
+def summary_rows_csv_path(run_dir: str | Path) -> Path:
+    return benchmark_aggregate_dir(run_dir) / "summary_rows.csv"
+
+
+def seed_level_metrics_path(run_dir: str | Path) -> Path:
+    return benchmark_aggregate_dir(run_dir) / "seed_level_metrics.csv"
+
+
+def aggregated_by_method_path(run_dir: str | Path) -> Path:
+    return benchmark_aggregate_dir(run_dir) / "aggregated_by_method.csv"
+
+
+def paired_comparisons_path(run_dir: str | Path) -> Path:
+    return benchmark_aggregate_dir(run_dir) / "paired_comparisons.csv"
+
+
+def win_summary_path(run_dir: str | Path) -> Path:
+    return benchmark_aggregate_dir(run_dir) / "win_summary.csv"
+
+
+def scenario_summary_path(run_dir: str | Path) -> Path:
+    return benchmark_aggregate_dir(run_dir) / "scenario_summary.csv"
 
 
 def baseline_metrics_mcprice_path(run_dir: str | Path | None = None) -> Path:

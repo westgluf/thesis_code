@@ -1,5 +1,8 @@
 import os
+import matplotlib
 import numpy as np
+
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 def plot_hist(pl_a: np.ndarray, pl_b: np.ndarray, label_a: str, label_b: str, outpath: str):
@@ -35,6 +38,23 @@ def plot_es_var_bars(metrics_a: dict, metrics_b: dict, alpha_list, outpath: str,
     plt.xticks(x, labels, rotation=30, ha="right")
     plt.ylabel("Loss metric value")
     plt.title(title)
+    plt.legend()
+    plt.tight_layout()
+    os.makedirs(os.path.dirname(outpath), exist_ok=True)
+    plt.savefig(outpath, dpi=200)
+    plt.close()
+
+
+def plot_train_val_curves(train_log, outpath: str):
+    epochs = [int(row["epoch"]) for row in train_log]
+    train_loss = [float(row["train_loss"]) for row in train_log]
+    val_loss = [float(row["val_loss"]) for row in train_log]
+
+    plt.figure()
+    plt.plot(epochs, train_loss, label="train")
+    plt.plot(epochs, val_loss, label="val")
+    plt.xlabel("Epoch")
+    plt.ylabel("Objective")
     plt.legend()
     plt.tight_layout()
     os.makedirs(os.path.dirname(outpath), exist_ok=True)

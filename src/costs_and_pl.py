@@ -29,3 +29,16 @@ def pl_paths_proportional_costs(
 
     PL = -Z + p0 + gains - costs
     return PL
+
+
+def turnover_paths(deltas: np.ndarray) -> np.ndarray:
+    """
+    Unweighted turnover per path:
+      |delta_0| + sum_k |delta_k - delta_{k-1}| + |delta_{n-1}|
+    matching the open/adjust/close structure used in proportional cost accounting.
+    """
+    N, n = deltas.shape
+    delta_prev = np.concatenate([np.zeros((N, 1), dtype=deltas.dtype), deltas[:, :-1]], axis=1)
+    trade = np.abs(deltas - delta_prev)
+    close = np.abs(deltas[:, -1])
+    return trade.sum(axis=1) + close

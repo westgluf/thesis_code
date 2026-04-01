@@ -21,6 +21,17 @@ def write_run_config(path: str | Path, cfg: Mapping[str, Any]) -> None:
     write_json_file(path, dict(cfg), sort_keys=True)
 
 
+def write_csv_rows(path: str | Path, fieldnames: Iterable[str], rows: Iterable[Mapping[str, Any]]) -> None:
+    out_path = Path(path)
+    header = list(fieldnames)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    with out_path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=header, lineterminator="\n")
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({name: row.get(name, "") for name in header})
+
+
 def write_train_log(path: str | Path, rows: Iterable[Mapping[str, Any]]) -> None:
     out_path = Path(path)
     out_path.parent.mkdir(parents=True, exist_ok=True)

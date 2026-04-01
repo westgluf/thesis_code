@@ -29,15 +29,6 @@ def save_eval_artifacts(
     write_json_file(metrics_bs_path(out_dir), m_bs)
     write_json_file(metrics_nn_path(out_dir), m_nn)
 
-    plot_hist(pl_bs, pl_nn, label_bs, label_nn, hist_plot_path(out_dir))
-    plot_es_var_bars(
-        m_bs,
-        m_nn,
-        alpha_list,
-        tail_plot_path(out_dir),
-        title="GBM: BS-delta vs Deep hedging",
-    )
-
     if arrays_debug is not None:
         payload = {}
         for key, value in arrays_debug.items():
@@ -46,5 +37,14 @@ def save_eval_artifacts(
             else:
                 payload[key] = np.asarray(value)
         np.savez(arrays_debug_path(out_dir), **payload)
+
+    plot_hist(pl_bs, pl_nn, label_bs, label_nn, hist_plot_path(out_dir))
+    plot_es_var_bars(
+        m_bs,
+        m_nn,
+        alpha_list,
+        tail_plot_path(out_dir),
+        title="GBM: BS-delta vs Deep hedging",
+    )
 
     return m_bs, m_nn

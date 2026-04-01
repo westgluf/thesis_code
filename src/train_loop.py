@@ -36,6 +36,9 @@ def _validate_data(data: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _extract_w_value(objective_fn: Callable[[torch.Tensor], torch.Tensor]) -> float:
+    monitor_value = getattr(objective_fn, "monitor_value", None)
+    if callable(monitor_value):
+        return float(monitor_value())
     w = getattr(objective_fn, "w", None)
     if isinstance(w, torch.Tensor):
         return float(w.detach().cpu().item())

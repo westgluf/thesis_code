@@ -12,6 +12,7 @@ dependencies = [
   "matplotlib",
   "numpy",
   "PyYAML",
+  "scipy",
   "torch",
   "tqdm",
 ]
@@ -19,6 +20,8 @@ dependencies = [
 [project.scripts]
 thesis-code-baseline-gbm = "src.run_gbm_baseline:main"
 thesis-code-train-gbm = "src.train_deephedge_gbm:main"
+thesis-code-benchmark-grid-gbm = "src.run_benchmark_gbm_grid:main"
+thesis-code-benchmark-stats-gbm = "src.rebuild_benchmark_statistics:main"
 thesis-code-smoke = "src.tools_cli:smoke_cli"
 thesis-code-guard = "src.tools_cli:guard_cli"
 
