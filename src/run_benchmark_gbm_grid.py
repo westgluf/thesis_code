@@ -126,7 +126,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--out-dir", default=None, help="Output root for this campaign.")
     parser.add_argument("--campaign-id", default="main_benchmark", help="Stable campaign identifier.")
     parser.add_argument("--campaign-role", default="main", help="Campaign role label, e.g. main or supplementary.")
-    parser.add_argument("--sigma-bars", default="0.15,0.20,0.25", help="Comma-separated sigma_bar values.")
+    parser.add_argument("--sigma-bars", default="0.10,0.15,0.20,0.25,0.30", help="Comma-separated sigma_bar values.")
     parser.add_argument("--lambda-costs", default="0,1e-4,5e-4,1e-3", help="Comma-separated lambda_cost values.")
     parser.add_argument(
         "--scenario-pairs",

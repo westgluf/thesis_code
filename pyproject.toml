@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "thesis-code"
 version = "0.1.0"
 description = "Experiment 6.2 GBM deep hedging thesis code"
-readme = "README_6_2.md"
+readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
   "matplotlib",

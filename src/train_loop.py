@@ -16,7 +16,7 @@ _DATA_KEYS = (
     "F_va",
     "S_va",
     "Z_va",
-    "p0_true_mc",
+    "p0",
     "lam_cost",
 )
 _DEFAULT_GRAD_CLIP = 1.0
@@ -55,6 +55,7 @@ def train_loop(
     batch_size: int,
     patience: int,
     device: str | torch.device,
+    reg_delta_l2: float = 1e-4,
     trange=None,
 ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], TrainLog]:
     if trange is None:
@@ -71,7 +72,7 @@ def train_loop(
     F_va = data["F_va"]
     S_va = data["S_va"]
     Z_va = data["Z_va"]
-    p0_true_mc = float(data["p0_true_mc"])
+    p0 = float(data["p0"])
     lam_cost = float(data["lam_cost"])
 
     best_val = float("inf")
@@ -96,9 +97,9 @@ def train_loop(
 
             optimizer.zero_grad(set_to_none=True)
             deltas = rollout_strategy(model, F_batch)
-            pl = compute_pl_torch(S_batch, deltas, Z_batch, p0_true_mc, lam_cost)
+            pl = compute_pl_torch(S_batch, deltas, Z_batch, p0, lam_cost)
             loss = objective_fn(pl)
-            loss = loss + (1e-4 * (deltas**2).mean()) + (0.0 * ((deltas[:, 1:] - deltas[:, :-1]) ** 2).mean())
+            loss = loss + (reg_delta_l2 * (deltas**2).mean()) + (0.0 * ((deltas[:, 1:] - deltas[:, :-1]) ** 2).mean())
 
             loss.backward()
             if _DEFAULT_GRAD_CLIP > 0:
@@ -111,7 +112,7 @@ def train_loop(
         model.eval()
         with torch.no_grad():
             deltas_va = rollout_strategy(model, F_va)
-            pl_va = compute_pl_torch(S_va, deltas_va, Z_va, p0_true_mc, lam_cost)
+            pl_va = compute_pl_torch(S_va, deltas_va, Z_va, p0, lam_cost)
             val_loss = float(objective_fn(pl_va).detach().cpu().item())
 
         train_log.append(

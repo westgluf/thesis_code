@@ -97,6 +97,7 @@ def run_from_cfg(cfg: Mapping[str, Any]) -> ExperimentRunResult:
     lr = float(get(cfg, "train.lr", 3e-4))
     wd = float(get(cfg, "train.weight_decay", 0.0))
     patience = int(get(cfg, "train.patience", 10))
+    reg_delta_l2 = float(get(cfg, "train.reg_delta_l2", 1e-4))
 
     hidden = int(get(cfg, "model.hidden", 128))
     depth = int(get(cfg, "model.depth", 4))
@@ -144,11 +145,11 @@ def run_from_cfg(cfg: Mapping[str, Any]) -> ExperimentRunResult:
         S_va, Z_va, F_va = data_np["S_va"], data_np["Z_va"], data_np["F_va"]
         S_te, Z_te, F_te = data_np["S_te"], data_np["Z_te"], data_np["F_te"]
 
-        p0_true_mc = float(np.mean(reference_data["Z_tr"]))
+        p0 = float(bs_call_price_discounted(0.0, S0, K, sigma_true, T))
 
         deltas_bs_test = bs_delta_strategy_paths(t_grid, S_te, K, sigma_bar, T)
         p0_bs = bs_call_price_discounted(0.0, S0, K, sigma_bar, T)
-        pl_bs = pl_paths_proportional_costs(S_te, deltas_bs_test, Z_te, p0_true_mc, lam_cost)
+        pl_bs = pl_paths_proportional_costs(S_te, deltas_bs_test, Z_te, p0, lam_cost)
         turnover_bs = turnover_paths(deltas_bs_test)
 
         S_tr_t = torch.tensor(S_tr, device=device)
@@ -178,7 +179,7 @@ def run_from_cfg(cfg: Mapping[str, Any]) -> ExperimentRunResult:
             "F_va": F_va_t,
             "S_va": S_va_t,
             "Z_va": Z_va_t,
-            "p0_true_mc": p0_true_mc,
+            "p0": p0,
             "lam_cost": lam_cost,
         }
 
@@ -191,6 +192,7 @@ def run_from_cfg(cfg: Mapping[str, Any]) -> ExperimentRunResult:
             batch_size=batch_size,
             patience=patience,
             device=device,
+            reg_delta_l2=reg_delta_l2,
             trange=trange,
         )
         _save_training_artifacts(run_dir, best_state, last_state, train_log)
@@ -200,7 +202,7 @@ def run_from_cfg(cfg: Mapping[str, Any]) -> ExperimentRunResult:
         model.eval()
         with torch.no_grad():
             deltas_te = rollout_strategy(model, F_te_t)
-            pl_te = compute_pl_torch(S_te_t, deltas_te, Z_te_t, p0_true_mc, lam_cost).cpu().numpy()
+            pl_te = compute_pl_torch(S_te_t, deltas_te, Z_te_t, p0, lam_cost).cpu().numpy()
         deltas_te_np = deltas_te.cpu().numpy()
         turnover_nn = turnover_paths(deltas_te_np)
 
@@ -254,7 +256,7 @@ def run_from_cfg(cfg: Mapping[str, Any]) -> ExperimentRunResult:
         print(f"Saved results to: {run_dir}")
         print("BS-delta:", m_bs)
         print("Deep hedging:", m_nn)
-        print("Note: p0 used = MC estimate from true-vol train set; BS price also available:", p0_bs)
+        print(f"Note: p0 = BS price (sigma_true={sigma_true}): {p0:.6f}; BS(sigma_bar={sigma_bar}): {p0_bs:.6f}")
 
         return ExperimentRunResult(
             run_id=benchmark_context.run_id,

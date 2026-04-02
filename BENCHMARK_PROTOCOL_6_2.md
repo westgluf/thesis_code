@@ -24,9 +24,11 @@
   - Cost levels:
     - `lambda_cost in {0, 1e-4, 5e-4, 1e-3}`.
   - Classical hedge scenarios:
+    - `BS(sigma_bar = 0.10)`.
     - `BS(sigma_bar = 0.15)`.
     - `BS(sigma_bar = 0.20)`.
     - `BS(sigma_bar = 0.25)`.
+    - `BS(sigma_bar = 0.30)`.
     - Evaluate each BS hedge under each `lambda_cost`.
   - Deep hedge scenarios:
     - `DH-oracle`: train only on paths generated with `sigma = 0.20`.
@@ -35,9 +37,9 @@
   - Seed grid:
     - `seeds = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}`.
   - Total benchmark size:
-    - Strategy evaluations per seed: `4 cost levels x (3 BS strategies + 2 deep strategies) = 20`.
+    - Strategy evaluations per seed: `4 cost levels x (5 BS strategies + 2 deep strategies) = 28`.
     - Neural-network trainings per seed: `4 cost levels x 2 training regimes = 8`.
-    - Full study: `200` evaluated strategy-seed-cost cells and `80` trained neural networks.
+    - Full study: `280` evaluated strategy-seed-cost cells and `80` trained neural networks.
 
 - Data protocol:
   - For each seed, generate a fresh independent dataset.
@@ -75,7 +77,7 @@
     - Save both `best_state.pt` and `last_state.pt`.
   - Classical hedge:
     - No training.
-    - Compute deltas on the same hedging grid using `sigma_bar in {0.15, 0.20, 0.25}`.
+    - Compute deltas on the same hedging grid using `sigma_bar in {0.10, 0.15, 0.20, 0.25, 0.30}`.
   - Fairness rules:
     - Use the same premium `p0` for all methods in the primary benchmark.
     - Use the same transaction cost parameter during training and evaluation for each deep hedge run.
@@ -104,13 +106,17 @@
   - Primary method comparisons at each `lambda_cost`:
     - `DH-oracle` vs `BS(sigma_bar = 0.20)`.
     - `DH-robust` vs `BS(sigma_bar = 0.20)`.
+    - `DH-oracle` vs `BS(sigma_bar = 0.10)`.
     - `DH-oracle` vs `BS(sigma_bar = 0.15)`.
     - `DH-oracle` vs `BS(sigma_bar = 0.25)`.
+    - `DH-oracle` vs `BS(sigma_bar = 0.30)`.
+    - `DH-robust` vs `BS(sigma_bar = 0.10)`.
     - `DH-robust` vs `BS(sigma_bar = 0.15)`.
     - `DH-robust` vs `BS(sigma_bar = 0.25)`.
+    - `DH-robust` vs `BS(sigma_bar = 0.30)`.
     - `DH-robust` vs `DH-oracle`.
   - Sanity-check comparisons:
-    - `BS(0.20)` vs `BS(0.15)` and `BS(0.25)` to quantify the direct effect of volatility misspecification.
+    - `BS(0.20)` vs `BS(0.10)`, `BS(0.15)`, `BS(0.25)`, and `BS(0.30)` to quantify the direct effect of volatility misspecification.
     - `DH-oracle` vs `BS(0.20)` at `lambda_cost = 0` as a near-frictionless benchmark sanity check.
 
 - Reporting protocol:
@@ -198,7 +204,7 @@
   - `H1`:
     - At `lambda_cost > 0`, `DH-oracle` has lower `ES95` and `ES99` than `BS(sigma_bar = 0.20)` on the same seed-level test sets.
   - `H2`:
-    - Under volatility misspecification, both `DH-oracle` and `DH-robust` have lower `ES95` and `ES99` than `BS(sigma_bar = 0.15)` and `BS(sigma_bar = 0.25)`.
+    - Under volatility misspecification, both `DH-oracle` and `DH-robust` have lower `ES95` and `ES99` than `BS(sigma_bar)` for `sigma_bar in {0.10, 0.15, 0.25, 0.30}`.
   - `H3`:
     - `DH-robust` achieves lower or equal tail risk than `DH-oracle` at positive transaction costs without a statistically significant increase in turnover.
   - `H4`:

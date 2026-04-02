@@ -43,33 +43,33 @@ def main() -> None:
     ST_test = S_test[:, -1]
     Z_test = payoff_call(ST_test, K)
 
-    p0_true_mc = float(np.mean(Z_test))
-    p0_bs = bs_call_price_discounted(0.0, S0, K, sigma_bar, T)
+    p0 = float(bs_call_price_discounted(0.0, S0, K, sigma_true, T))
+    p0_bs = float(bs_call_price_discounted(0.0, S0, K, sigma_bar, T))
 
     deltas_bs = bs_delta_strategy_paths(t_grid, S_test, K, sigma_bar, T)
 
-    pl_bs_mcprice = pl_paths_proportional_costs(S_test, deltas_bs, Z_test, p0_true_mc, lam_cost)
+    pl_bs_primary = pl_paths_proportional_costs(S_test, deltas_bs, Z_test, p0, lam_cost)
     pl_bs_bsprice = pl_paths_proportional_costs(S_test, deltas_bs, Z_test, p0_bs, lam_cost)
 
     alpha_list = (0.95, 0.99)
-    m_bs_mc = summary_metrics(pl_bs_mcprice, alpha_list=alpha_list, lam_entropic=1.0)
+    m_bs_primary = summary_metrics(pl_bs_primary, alpha_list=alpha_list, lam_entropic=1.0)
     m_bs_bs = summary_metrics(pl_bs_bsprice, alpha_list=alpha_list, lam_entropic=1.0)
 
     run_dir = get_baseline_dir()
     run_dir.mkdir(parents=True, exist_ok=True)
 
-    write_json_file(baseline_metrics_mcprice_path(run_dir), m_bs_mc)
+    write_json_file(baseline_metrics_mcprice_path(run_dir), m_bs_primary)
     write_json_file(baseline_metrics_bsprice_path(run_dir), m_bs_bs)
 
     plot_hist(
-        pl_bs_mcprice,
+        pl_bs_primary,
         pl_bs_bsprice,
-        "BS-delta (p0=MC)",
-        "BS-delta (p0=BS)",
+        "BS-delta (p0=BS_true)",
+        "BS-delta (p0=BS_bar)",
         baseline_hist_plot_path(run_dir),
     )
     plot_es_var_bars(
-        m_bs_mc,
+        m_bs_primary,
         m_bs_bs,
         alpha_list,
         baseline_tail_plot_path(run_dir),
@@ -77,8 +77,8 @@ def main() -> None:
     )
 
     print("Saved results to:", run_dir)
-    print("BS-delta with p0=MC price:", m_bs_mc)
-    print("BS-delta with p0=BS price:", m_bs_bs)
+    print("BS-delta with p0=BS_true:", m_bs_primary)
+    print("BS-delta with p0=BS_bar:", m_bs_bs)
 
 
 if __name__ == "__main__":
