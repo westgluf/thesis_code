@@ -1,0 +1,98 @@
+======================================================================
+  WORST-CASE ADVERSARIAL PERTURBATION — PART A OF PROMPT 12
+======================================================================
+  Theta_0: {'H': 0.07, 'eta': 1.9, 'rho': -0.7, 'xi0': 0.055224999999999996}
+  Radii: [0.2, 0.5, 1.0, 2.0]
+  PGD steps: 50  lr: 0.02
+  N paths: attack=10000, eval=30000
+
+  Loading baseline hedger from Prompt 11 cache ...
+  Computing calibration p_0 ...
+    p_0 = 8.1023
+
+--- Radius r=0.2 (1/4) ---
+  Attack BS ...
+    BS baseline=11.512  worst=12.958  (+12.6%)  in 3s
+  Attack deep hedger ...
+    DH baseline=10.727  worst=12.252  (+14.2%)  in 46s
+  Cross-evaluating ...
+
+--- Radius r=0.5 (2/4) ---
+  Attack BS ...
+    BS baseline=11.512  worst=15.507  (+34.7%)  in 3s
+  Attack deep hedger ...
+    DH baseline=10.727  worst=14.851  (+38.4%)  in 45s
+  Cross-evaluating ...
+
+--- Radius r=1.0 (3/4) ---
+  Attack BS ...
+    BS baseline=11.512  worst=19.341  (+68.0%)  in 3s
+  Attack deep hedger ...
+    DH baseline=10.727  worst=18.887  (+76.1%)  in 46s
+  Cross-evaluating ...
+
+--- Radius r=2.0 (4/4) ---
+  Attack BS ...
+    BS baseline=11.512  worst=21.698  (+88.5%)  in 3s
+  Attack deep hedger ...
+    DH baseline=10.727  worst=21.714  (+102.4%)  in 48s
+  Cross-evaluating ...
+
+  Generating figures ...
+    saved fig_worst_case_radii.png
+    saved fig_worst_case_directions.png
+    saved fig_worst_case_cross_matrix.png
+
+======================================================================
+  WORST-CASE ADVERSARIAL REPORT
+======================================================================
+
+--- Radius r = 0.2 ---
+  BS worst case:  ES_95 = 12.958  (+12.6% vs baseline)
+  DH worst case:  ES_95 = 12.252  (+14.2% vs baseline)
+  eps*_BS = (H=-0.0071, eta=+0.1819, rho=+0.0130)
+  eps*_DH = (H=-0.0072, eta=+0.1819, rho=+0.0127)
+  Cross-eval:
+    BS at eps*_BS = 13.250
+    BS at eps*_DH = 12.843
+    DH at eps*_BS = 11.953
+    DH at eps*_DH = 12.136
+
+--- Radius r = 0.5 ---
+  BS worst case:  ES_95 = 15.507  (+34.7% vs baseline)
+  DH worst case:  ES_95 = 14.851  (+38.4% vs baseline)
+  eps*_BS = (H=-0.0205, eta=+0.4428, rho=+0.0330)
+  eps*_DH = (H=-0.0201, eta=+0.4490, rho=+0.0266)
+  Cross-eval:
+    BS at eps*_BS = 15.747
+    BS at eps*_DH = 16.185
+    DH at eps*_BS = 15.299
+    DH at eps*_DH = 14.596
+
+--- Radius r = 1.0 ---
+  BS worst case:  ES_95 = 19.341  (+68.0% vs baseline)
+  DH worst case:  ES_95 = 18.887  (+76.1% vs baseline)
+  eps*_BS = (H=-0.0600, eta=+0.7824, rho=+0.0252)
+  eps*_DH = (H=-0.0600, eta=+0.7609, rho=+0.0250)
+  Cross-eval:
+    BS at eps*_BS = 20.666
+    BS at eps*_DH = 19.908
+    DH at eps*_BS = 18.990
+    DH at eps*_DH = 21.294
+
+--- Radius r = 2.0 ---
+  BS worst case:  ES_95 = 21.698  (+88.5% vs baseline)
+  DH worst case:  ES_95 = 21.714  (+102.4% vs baseline)
+  eps*_BS = (H=-0.0571, eta=+1.3319, rho=+0.0854)
+  eps*_DH = (H=-0.0600, eta=+1.3529, rho=+0.0874)
+  Cross-eval:
+    BS at eps*_BS = 23.023
+    BS at eps*_DH = 21.601
+    DH at eps*_BS = 21.989
+    DH at eps*_DH = 23.312
+
+======================================================================
+  VERDICT
+======================================================================
+  MIXED H3 (WORST CASE)
+  Mixed worst-case robustness: deep hedger is below BS at some radii but not others. Graceful degradation fails at larger perturbations.

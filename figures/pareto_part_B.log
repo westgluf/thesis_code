@@ -1,0 +1,44 @@
+=================================================================
+  Pareto Front / H2 Factorial Experiment
+=================================================================
+  grid: REDUCED
+  n_train=60000, n_val=10000, n_test=30000
+  Part A freq: [50, 100, 200]
+  Part A cost: [0.0, 0.001, 0.002]
+  Part A epochs: 100
+  Part B epochs: 150
+
+--- Part B: Pareto sweep, n_steps=100, cost=0.001 ---
+  Paths generated in 0.4s, p0=8.0929
+  BS:  ES_95=11.527  mean_pnl=-0.201
+
+  Training es_a0.50  [1/5]
+    ES_95=12.012  mean_pnl=-0.144  std=3.937  turnover=2.034  (331s)
+
+  Training es_a0.90  [2/5]
+    ES_95=10.353  mean_pnl=-0.111  std=3.932  turnover=1.809  (559s)
+
+  Training es_a0.95  [3/5]
+    ES_95=10.320  mean_pnl=-0.096  std=4.155  turnover=1.677  (370s)
+
+  Training es_a0.99  [4/5]
+    ES_95=11.312  mean_pnl=-0.088  std=4.646  turnover=1.589  (186s)
+
+  Training mse  [5/5]
+    ES_95=10.855  mean_pnl=-0.144  std=3.807  turnover=2.056  (409s)
+
+  Part B total time: 30.9 min
+
+Part B Pareto results:
+  Objective             mean_pnl       std     ES_95     ES_99    ent(1)      turn
+  --------------------------------------------------------------------------------
+  BS delta                -0.201     3.954    11.527    20.508    49.781     2.713
+  es_a0.50                -0.144     3.937    12.012    21.200    48.842     2.034
+  es_a0.90                -0.111     3.932    10.353    17.894    41.313     1.809
+  es_a0.95                -0.096     4.155    10.320    17.073    36.115     1.677
+  es_a0.99                -0.088     4.646    11.312    16.696    33.367     1.589
+  mse                     -0.144     3.807    10.855    18.832    40.441     2.056
+
+=================================================================
+  PARETO EXPERIMENT COMPLETE
+=================================================================

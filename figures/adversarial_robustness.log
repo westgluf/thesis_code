@@ -1,0 +1,149 @@
+=================================================================
+  ADVERSARIAL ROBUSTNESS — H3 TEST
+=================================================================
+  Theta_0: {'H': 0.07, 'eta': 1.9, 'rho': -0.7, 'xi0': 0.055224999999999996}
+  n_train=60000, n_val=10000, n_test/eps=30000
+  Gradient: 50000 paths x 5 seeds
+
+  --- Baseline hedger setup ---
+  Training baseline hedger at Theta_0 (60000 paths, 150 epochs) ...
+    trained in 13.4 min
+    saved to adversarial_baseline_hedger.pt
+
+=================================================================
+  APPROACH A — Gradient Sensitivity at Theta_0
+=================================================================
+
+  BS delta: 5 seeds x 50000 paths ...
+    done in 1s
+    grad_H     = -20.2410 ± 1.6185
+    grad_eta   = +7.1352 ± 0.1546
+    grad_rho   = +8.5478 ± 0.5330
+    L2 norm    = 23.1190 ± 1.3818
+    ES_95      = 11.5354
+
+  Deep hedger: 5 seeds x 50000 paths ...
+    done in 63s
+    grad_H     = -20.9785 ± 2.0813
+    grad_eta   = +7.1519 ± 0.1620
+    grad_rho   = +8.4404 ± 0.7282
+    L2 norm    = 23.7479 ± 1.7453
+    ES_95      = 10.7492
+
+  Sensitivity ratios |BS| / |DH|:
+       H: 0.965
+     eta: 0.998
+     rho: 1.013
+      l2: 0.974
+
+=================================================================
+  APPROACH B — Perturbation Sweep (3 axes)
+=================================================================
+
+  --- H axis ---
+    eps=-0.0600  Theta=H=+0.010  p0_eval=7.960  ES_BS=12.009  ES_DH=11.549
+    eps=-0.0300  Theta=H=+0.040  p0_eval=7.960  ES_BS=12.544  ES_DH=11.764
+    eps=-0.0100  Theta=H=+0.060  p0_eval=7.960  ES_BS=11.928  ES_DH=11.134
+    eps=+0.0000  Theta=H=+0.070  p0_eval=7.960  ES_BS=11.446  ES_DH=10.603
+    eps=+0.0100  Theta=H=+0.080  p0_eval=7.960  ES_BS=11.300  ES_DH=10.545
+    eps=+0.0300  Theta=H=+0.100  p0_eval=7.960  ES_BS=11.165  ES_DH=10.327
+    eps=+0.0600  Theta=H=+0.130  p0_eval=7.960  ES_BS=10.249  ES_DH=9.445
+
+  --- eta axis ---
+    eps=-1.4000  Theta=eta=+0.500  p0_eval=7.960  ES_BS=4.170  ES_DH=4.171
+    eps=-0.9000  Theta=eta=+1.000  p0_eval=7.960  ES_BS=6.164  ES_DH=5.619
+    eps=-0.4000  Theta=eta=+1.500  p0_eval=7.960  ES_BS=8.749  ES_DH=8.058
+    eps=+0.0000  Theta=eta=+1.900  p0_eval=7.960  ES_BS=11.276  ES_DH=10.516
+    eps=+0.4000  Theta=eta=+2.300  p0_eval=7.960  ES_BS=14.215  ES_DH=13.570
+    eps=+0.9000  Theta=eta=+2.800  p0_eval=7.960  ES_BS=16.771  ES_DH=16.202
+    eps=+1.4000  Theta=eta=+3.300  p0_eval=7.960  ES_BS=22.253  ES_DH=21.688
+
+  --- rho axis ---
+    eps=-0.2000  Theta=rho=-0.900  p0_eval=7.960  ES_BS=9.566  ES_DH=8.797
+    eps=-0.1000  Theta=rho=-0.800  p0_eval=7.960  ES_BS=10.447  ES_DH=9.692
+    eps=-0.0500  Theta=rho=-0.750  p0_eval=7.960  ES_BS=10.936  ES_DH=10.178
+    eps=+0.0000  Theta=rho=-0.700  p0_eval=7.960  ES_BS=11.580  ES_DH=10.809
+    eps=+0.0500  Theta=rho=-0.650  p0_eval=7.960  ES_BS=11.690  ES_DH=10.968
+    eps=+0.1000  Theta=rho=-0.600  p0_eval=7.960  ES_BS=12.002  ES_DH=11.265
+    eps=+0.2000  Theta=rho=-0.500  p0_eval=7.960  ES_BS=13.062  ES_DH=12.320
+
+  Saved adversarial_robustness.json
+
+  Generating figures ...
+    saved fig_h3_gradient_bars.png
+    saved fig_h3_sweep_H.png
+    saved fig_h3_sweep_eta.png
+    saved fig_h3_sweep_rho.png
+    saved fig_h3_degradation_curves.png
+    saved fig_h3_summary.png
+
+=================================================================
+  H3 ADVERSARIAL ROBUSTNESS REPORT
+=================================================================
+
+1. GRADIENT SENSITIVITY (Approach A)
+-----------------------------------------------------------------
+   axis       |grad_BS|       |grad_DH|   BS/DH ratio
+      H    20.2410±1.619    20.9785±2.081        0.965
+    eta     7.1352±0.155     7.1519±0.162        0.998
+    rho     8.5478±0.533     8.4404±0.728        1.013
+
+  L2 norm:  BS = 23.1190,  DH = 23.7479,  ratio = 0.974
+
+2. PERTURBATION SWEEP (Approach B)
+-----------------------------------------------------------------
+
+  Axis H:
+         eps     ES_BS    rel_BS     ES_DH    rel_DH  winner
+     -0.0600    12.009    +4.92%    11.549    +8.92%  BS
+     -0.0300    12.544    +9.60%    11.764   +10.95%  BS
+     -0.0100    11.928    +4.21%    11.134    +5.01%  BS
+     +0.0000    11.446    +0.00%    10.603    +0.00%  —
+     +0.0100    11.300    -1.27%    10.545    -0.55%  DH
+     +0.0300    11.165    -2.45%    10.327    -2.60%  BS
+     +0.0600    10.249   -10.45%     9.445   -10.92%  BS
+
+  Axis eta:
+         eps     ES_BS    rel_BS     ES_DH    rel_DH  winner
+     -1.4000     4.170   -63.02%     4.171   -60.34%  DH
+     -0.9000     6.164   -45.34%     5.619   -46.56%  BS
+     -0.4000     8.749   -22.41%     8.058   -23.37%  BS
+     +0.0000    11.276    +0.00%    10.516    +0.00%  —
+     +0.4000    14.215   +26.06%    13.570   +29.04%  BS
+     +0.9000    16.771   +48.73%    16.202   +54.08%  BS
+     +1.4000    22.253   +97.34%    21.688  +106.25%  BS
+
+  Axis rho:
+         eps     ES_BS    rel_BS     ES_DH    rel_DH  winner
+     -0.2000     9.566   -17.39%     8.797   -18.61%  BS
+     -0.1000    10.447    -9.78%     9.692   -10.34%  BS
+     -0.0500    10.936    -5.56%    10.178    -5.84%  BS
+     +0.0000    11.580    +0.00%    10.809    +0.00%  —
+     +0.0500    11.690    +0.95%    10.968    +1.47%  BS
+     +0.1000    12.002    +3.65%    11.265    +4.22%  BS
+     +0.2000    13.062   +12.80%    12.320   +13.98%  BS
+
+3. H3 VERDICT
+-----------------------------------------------------------------
+  Verdict: H3 REFUTED
+  H3 REFUTED: deep hedger is at least as sensitive as BS on the L2 norm (ratio 0.97). The hedger may be overfitting to the calibration point.
+
+  L2 ratio BS/DH: 0.974
+  Per-axis ratios:
+    H: 0.965
+    eta: 0.998
+    rho: 1.013
+
+  Per-axis robustness (DH wins fraction):
+    H: 1/6 = 17%
+    eta: 1/6 = 17%
+    rho: 0/6 = 0%
+
+  At largest |eps| on each axis (DH wins by >5% margin):
+    H: False
+    eta: False
+    rho: False
+
+4. DISSERTATION TEXT DRAFT
+-----------------------------------------------------------------
+Contrary to expectation, the deep hedger shows L2 gradient norm 23.748 versus 23.119 for BS delta (ratio 0.97). The deep hedger is at least as sensitive as BS along the tested axes. At |eps|=0.060 on the H axis, BS degrades by +4.9% and DH by +8.9%. At |eps|=0.060 on the H axis, BS degrades by -10.5% and DH by -10.9%. At |eps|=1.400 on the eta axis, BS degrades by -63.0% and DH by -60.3%. Hypothesis H3 is REFUTED at this calibration. This is consistent with the decomposition from §6.3.2: a strategy whose advantage is objective-driven has no particular reason to be robust to dynamic misspecification.

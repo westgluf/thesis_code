@@ -1,0 +1,80 @@
+======================================================================
+  H2 GRID EXTENSION  —  BS delta only
+======================================================================
+  Frequencies: [25, 50, 100, 200, 400, 800]
+  Costs:       [0.0, 0.0005, 0.001, 0.002, 0.003, 0.005, 0.01]
+  Grid size:   6 x 7 = 42 cells
+  N_test:      50000
+  Device:      cpu
+
+  Pre-validating n_steps=800 (100 paths, dry run) ...
+    OK: shape (100, 801), finite=True
+  Loaded 9 cells from Prompt 9 Part A
+
+  n_steps=25
+    generated 50000 paths (seed=2049, p0=7.9203)
+    ES_95: [ 15.16  15.27  15.39  15.62  15.85  16.31  17.48]  (0.1s)
+
+  n_steps=50
+    reusing costs [0.0, 0.001, 0.002]
+    generated 50000 paths (seed=2074, p0=7.9903)
+    ES_95: [ 12.75  13.13  13.06  13.36  13.88  14.49  16.04]  (0.2s)
+
+  n_steps=100
+    reusing costs [0.0, 0.001, 0.002]
+    generated 50000 paths (seed=2124, p0=8.1131)
+    ES_95: [ 11.08  11.64  11.49  11.91  12.69  13.54  15.72]  (0.3s)
+
+  n_steps=200
+    reusing costs [0.0, 0.001, 0.002]
+    generated 50000 paths (seed=2224, p0=8.1187)
+    ES_95: [ 10.52  10.87  11.11  11.70  12.36  13.57  16.67]  (0.6s)
+
+  n_steps=400
+    generated 50000 paths (seed=2424, p0=7.9928)
+    ES_95: [  9.78  10.19  10.60  11.43  12.27  13.98  18.36]  (1.3s)
+
+  n_steps=800
+    generated 50000 paths (seed=2824, p0=8.0598)
+    ES_95: [  9.24   9.82  10.40  11.58  12.78  15.21  21.45]  (3.9s)
+
+  Total grid time: 6.4s (0.1 min)
+
+======================================================================
+  FULL 6x7 GRID  —  ES_95 (row-minimum marked with *)
+======================================================================
+  n_steps \ lambda      0.0000   0.0005   0.0010   0.0020   0.0030   0.0050   0.0100
+  ----------------------------------------------------------------------------------
+      25             15.160*  15.275   15.389   15.618   15.848   16.311   17.480 
+      50             12.751*  13.127   13.056   13.362   13.881   14.492   16.045 
+     100             11.081*  11.638   11.491   11.905   12.689   13.542   15.720 
+     200             10.525*  10.873   11.108   11.697   12.356   13.568   16.669 
+     400              9.778*  10.186   10.597   11.428   12.270   13.977   18.360 
+     800              9.244*   9.820   10.402   11.581   12.776   15.208   21.448 
+
+  BS delta mean turnover (cost-independent):
+    n=  25:  turnover = 1.645
+    n=  50:  turnover = 2.095
+    n= 100:  turnover = 2.717
+    n= 200:  turnover = 3.597
+    n= 400:  turnover = 4.849
+    n= 800:  turnover = 6.595
+
+======================================================================
+  REVERSAL DETECTION
+======================================================================
+  Optimal n_steps by cost level:
+    lambda = 0.0000  ->  n_steps = 800
+    lambda = 0.0005  ->  n_steps = 800
+    lambda = 0.0010  ->  n_steps = 800
+    lambda = 0.0020  ->  n_steps = 400  [REVERSAL]
+    lambda = 0.0030  ->  n_steps = 400  [REVERSAL]
+    lambda = 0.0050  ->  n_steps = 100  [REVERSAL]
+    lambda = 0.0100  ->  n_steps = 100  [REVERSAL]
+
+  VERDICT: strong H2
+  Strong H2 confirmed: reversal observed starting at lambda = 0.0020
+  Reversal threshold: lambda >= 0.0020
+  Saved /Users/l/Desktop/thesis_code_copy/figures/h2_grid_extension.json
+
+  Done.

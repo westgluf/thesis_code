@@ -1,0 +1,84 @@
+=================================================================
+  LEAN H4 SWEEP — Full Stage 1 Budget
+=================================================================
+  Fixed budget: {'n_train': 80000, 'n_val': 20000, 'n_test': 50000, 'epochs': 200, 'patience': 30, 'batch_size': 2048, 'lr': 0.001, 'hidden_dim': 128, 'n_res_blocks': 2, 'weight_decay': 1e-05}
+  New H values: [0.02, 0.25]
+  Existing H=0.05 from: signature_ablation_stage_1.json
+
+=================================================================
+  LEAN H4 SWEEP  —  H = 0.02  (1/2)
+=================================================================
+
+  Generating paths at H=0.02 (seed=2044) ...
+    80000 train + 20000 val + 50000 test (0.6s), p0=8.8082
+  BS delta ...
+    ES_95 = 11.604
+  Flat (DeepHedgerFNN, 4d) ...
+    trained in 1501s  |  ES_95 = 10.611  (best epoch 197)
+  Sig-3 (SignatureDeepHedger, 7d) ...
+    trained in 1624s  |  ES_95 = 10.638  (best epoch 199)
+  Sig-full (SignatureDeepHedger, 12d) ...
+    trained in 7781s  |  ES_95 = 10.743  (best epoch 196)
+
+  H=0.02 completed in 181.9 min
+  ES_95 BS:       11.604
+  ES_95 flat:     10.611
+  ES_95 sig-3:    10.638
+  ES_95 sig-full: 10.743
+  Gamma_flat     = +0.993
+  Gamma_sig-3    = +0.965
+  Gamma_sig-full = +0.861
+  Roughness adv  = -0.132
+    Saved lean_h4_H0.02.json
+    Saved lean_h4_H0.02_pnl.pt
+
+=================================================================
+  LEAN H4 SWEEP  —  H = 0.25  (2/2)
+=================================================================
+
+  Generating paths at H=0.25 (seed=2274) ...
+    80000 train + 20000 val + 50000 test (0.8s), p0=7.3639
+  BS delta ...
+    ES_95 = 10.184
+  Flat (DeepHedgerFNN, 4d) ...
+    trained in 1491s  |  ES_95 = 8.814  (best epoch 198)
+  Sig-3 (SignatureDeepHedger, 7d) ...
+    trained in 2094s  |  ES_95 = 8.898  (best epoch 198)
+  Sig-full (SignatureDeepHedger, 12d) ...
+    trained in 5377s  |  ES_95 = 8.993  (best epoch 193)
+
+  H=0.25 completed in 149.5 min
+  ES_95 BS:       10.184
+  ES_95 flat:     8.814
+  ES_95 sig-3:    8.898
+  ES_95 sig-full: 8.993
+  Gamma_flat     = +1.370
+  Gamma_sig-3    = +1.286
+  Gamma_sig-full = +1.191
+  Roughness adv  = -0.180
+    Saved lean_h4_H0.25.json
+    Saved lean_h4_H0.25_pnl.pt
+
+  Loading Stage 1 H=0.05 ...
+    Gamma_flat     = +1.117
+    Gamma_sig-full = +1.087
+    Roughness adv  = -0.029
+
+  Saved /Users/l/Desktop/thesis_code_copy/figures/lean_h4_sweep_summary.json
+
+=================================================================
+  LEAN H4 SWEEP COMPLETE
+=================================================================
+       H    Gamma_flat    Gamma_sig3   Gamma_sigfull   rough_adv
+    0.02        +0.993        +0.965          +0.861      -0.132
+    0.05        +1.117        +0.819          +1.087      -0.029
+    0.25        +1.370        +1.286          +1.191      -0.180
+
+--- Trend check ---
+  H=0.02:  roughness_adv = -0.132
+  H=0.05:  roughness_adv = -0.029
+  H=0.25:  roughness_adv = -0.180
+
+  VERDICT: H4 refuted at all three points
+           max adv = -0.029  (not meaningfully positive)
+           RECOMMEND: proceed to Scenario C narrative - flat features suffice

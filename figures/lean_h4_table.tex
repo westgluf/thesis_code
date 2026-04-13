@@ -1,0 +1,15 @@
+\begin{table}[h]
+\centering
+\caption{Full-budget three-point H-sweep with path-feature ablation.
+         Budget: 80{,}000 training paths, 200 epochs, $n_{\rm steps}=100$.}
+\label{tab:lean_h4}
+\begin{tabular}{c|rrrr|rrr}
+\hline
+$H$ & $\mathrm{ES}_{95}^{\text{BS}}$ & $\mathrm{ES}_{95}^{\text{flat}}$ & $\mathrm{ES}_{95}^{\text{sig-3}}$ & $\mathrm{ES}_{95}^{\text{sig-full}}$ & $\Gamma^{\text{flat}}$ & $\Gamma^{\text{sig-full}}$ & $\Gamma^{\text{sig-full}}-\Gamma^{\text{flat}}$ \\
+\hline
+0.02 & 11.60 & 10.61 & 10.64 & 10.74 & +0.993 & +0.861 & -0.132 \\
+0.05 & 11.59 & 10.48 & 10.78 & 10.51 & +1.117 & +1.087 & -0.029 \\
+0.25 & 10.18 & 8.81 & 8.90 & 8.99 & +1.370 & +1.191 & -0.180 \\
+\hline
+\end{tabular}
+\end{table}
