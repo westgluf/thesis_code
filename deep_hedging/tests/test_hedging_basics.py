@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 
 from deep_hedging.core.gbm import GBM
 from deep_hedging.core.heston import Heston
-from deep_hedging.hedging.delta_hedger import BlackScholesDelta, HestonDelta
+from deep_hedging.hedging.delta_hedger import BlackScholesDelta, PluginDelta
 from deep_hedging.objectives.pnl import (
     compute_payoff,
     compute_hedging_pnl,
@@ -197,11 +197,11 @@ def test_delta_shapes_and_bounds() -> Tuple[bool, str]:
     shape_ok_bs = d_bs.shape == (n_paths, 100)
     bounds_ok_bs = bool((d_bs >= 0.0).all() and (d_bs <= 1.0).all())
 
-    # Heston delta on Heston paths
+    # Plug-in delta on Heston paths
     hest = Heston(n_steps=100, T=T)
     S_h, V_h, _ = hest.simulate(n_paths=n_paths, S0=100.0, seed=8)
-    hest_hedger = HestonDelta(K=K, T=T)
-    d_h = hest_hedger.hedge_paths(S_h, V_h)
+    plugin_hedger = PluginDelta(K=K, T=T)
+    d_h = plugin_hedger.hedge_paths(S_h, V_h)
     shape_ok_h = d_h.shape == (n_paths, 100)
     bounds_ok_h = bool((d_h >= 0.0).all() and (d_h <= 1.0).all())
 
@@ -214,9 +214,28 @@ def test_delta_shapes_and_bounds() -> Tuple[bool, str]:
     passed = shape_ok_bs and bounds_ok_bs and shape_ok_h and bounds_ok_h and atm_ok
     return passed, (
         f"BS: shape={shape_ok_bs}, bounds={bounds_ok_bs}; "
-        f"Heston: shape={shape_ok_h}, bounds={bounds_ok_h}; "
+        f"Plugin: shape={shape_ok_h}, bounds={bounds_ok_h}; "
         f"ATM delta={atm_delta:.4f} (≈0.5)"
     )
+
+
+# ---------------------------------------------------------------------------
+# Test 7: Deprecation alias regression
+# ---------------------------------------------------------------------------
+
+def test_plugin_delta_matches_legacy_heston_delta() -> Tuple[bool, str]:
+    """Deprecation alias must preserve behaviour."""
+    from deep_hedging.hedging.delta_hedger import PluginDelta, HestonDelta
+
+    torch.manual_seed(0)
+    S = torch.rand(4, 11) * 10 + 100.0
+    V = torch.rand(4, 11) * 0.1 + 0.04
+
+    plugin = PluginDelta(K=100.0, T=1.0)
+    legacy = HestonDelta(K=100.0, T=1.0)
+
+    match = bool(torch.allclose(plugin.hedge_paths(S, V), legacy.hedge_paths(S, V)))
+    return match, f"PluginDelta == HestonDelta alias: {match}"
 
 
 # ---------------------------------------------------------------------------
@@ -327,6 +346,7 @@ def main() -> None:
         ("4. Risk measure properties",                test_risk_measure_properties),
         ("5. BS call price vs MC",                    test_bs_price_sanity),
         ("6. Delta shapes and bounds",                test_delta_shapes_and_bounds),
+        ("7. PluginDelta deprecation alias",          test_plugin_delta_matches_legacy_heston_delta),
     ]
 
     print("=" * 70)
@@ -357,7 +377,7 @@ def main() -> None:
 
     print("-" * 70)
     if all_passed:
-        print(" All 6 tests PASSED.")
+        print(" All 7 tests PASSED.")
     else:
         print(" Some tests FAILED.")
         sys.exit(1)

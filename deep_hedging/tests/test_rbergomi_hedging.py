@@ -14,7 +14,7 @@ from typing import Tuple
 import torch
 
 from deep_hedging.core.rough_bergomi import DifferentiableRoughBergomi
-from deep_hedging.hedging.delta_hedger import BlackScholesDelta, HestonDelta
+from deep_hedging.hedging.delta_hedger import BlackScholesDelta, PluginDelta
 from deep_hedging.hedging.deep_hedger import (
     DeepHedgerFNN,
     hedge_paths_deep,
@@ -79,8 +79,8 @@ def test_valid_deltas() -> Tuple[bool, str]:
     d_bs = bs.hedge_paths(S)
     ok_bs = d_bs.shape == (1000, N_STEPS) and bool((d_bs >= 0).all() and (d_bs <= 1).all())
 
-    # Heston delta
-    hd = HestonDelta(K=K, T=T)
+    # Plug-in delta
+    hd = PluginDelta(K=K, T=T)
     d_h = hd.hedge_paths(S, V)
     ok_h = d_h.shape == (1000, N_STEPS) and bool((d_h >= 0).all() and (d_h <= 1).all())
 
@@ -92,7 +92,7 @@ def test_valid_deltas() -> Tuple[bool, str]:
     ok_d = d_d.shape == (1000, N_STEPS) and bool((d_d >= 0).all() and (d_d <= 1).all())
 
     passed = ok_bs and ok_h and ok_d
-    return passed, f"BS={ok_bs}, Heston={ok_h}, Deep={ok_d}"
+    return passed, f"BS={ok_bs}, Plugin={ok_h}, Deep={ok_d}"
 
 
 # ---------------------------------------------------------------------------

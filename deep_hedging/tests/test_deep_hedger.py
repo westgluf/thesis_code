@@ -335,6 +335,34 @@ def _make_figures() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Test 7: log-moneyness equivalence
+# ---------------------------------------------------------------------------
+
+def test_log_moneyness_equivalence_at_s0_equals_k() -> Tuple[bool, str]:
+    """Feature Set B: log(S/S_0) == log(S/K) when S_0 = K."""
+    n_steps = 10
+    T = 1.0
+    S0 = K = 100.0
+
+    torch.manual_seed(0)
+    S = S0 + torch.randn(16, n_steps + 1) * 5.0
+    S[:, 0] = S0  # simulator always starts exactly at S0
+    t_grid = torch.linspace(0.0, T, n_steps + 1)
+    deltas_prev = torch.zeros(16)
+
+    all_match = True
+    for k in range(n_steps):
+        feat = build_features(S, t_grid, T, deltas_prev, k)
+        log_s0 = feat[:, 1].double()
+        log_K = torch.log(S[:, k] / K).double()
+        if not torch.allclose(log_s0, log_K, atol=1e-12, rtol=0.0):
+            all_match = False
+            break
+
+    return all_match, f"log(S/S_0)==log(S/K) at S_0=K=100: {all_match}"
+
+
+# ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
 
@@ -346,6 +374,7 @@ def main() -> None:
         ("4. GBM sanity (deep ≈ BS)",       test_gbm_sanity),
         ("5. Cost-aware turnover",           test_cost_aware_turnover),
         ("6. Training convergence",          test_training_convergence),
+        ("7. log(S/S0)==log(S/K) at S0=K",  test_log_moneyness_equivalence_at_s0_equals_k),
     ]
 
     print("=" * 70)
@@ -374,7 +403,7 @@ def main() -> None:
 
     print("-" * 70)
     if all_passed:
-        print(" All 6 tests PASSED.")
+        print(f" All {len(tests)} tests PASSED.")
     else:
         print(" Some tests FAILED.")
         sys.exit(1)

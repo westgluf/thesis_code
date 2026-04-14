@@ -1,4 +1,4 @@
-from .delta_hedger import BlackScholesDelta, HestonDelta
+from .delta_hedger import BlackScholesDelta, PluginDelta, LelandDelta, HestonDelta
 from .deep_hedger import (
     DeepHedgerFNN,
     ResidualBlock,

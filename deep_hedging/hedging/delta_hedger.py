@@ -1,7 +1,7 @@
 """
 Analytical delta hedging strategies (Section 4.1).
 
-Provides Black-Scholes and Heston "plug-in" delta hedgers with a
+Provides Black-Scholes and plug-in (realised-variance) delta hedgers with a
 fully vectorised, differentiable implementation so that gradients
 can flow for adversarial experiments (Prompt 12).
 """
@@ -126,16 +126,26 @@ class BlackScholesDelta:
 
 
 # ---------------------------------------------------------------------------
-# Heston plug-in delta hedger
+# Plug-in delta hedger
 # ---------------------------------------------------------------------------
 
-class HestonDelta:
-    """Heston "plug-in" delta hedger (Remark 4.5).
+class PluginDelta:
+    """Plug-in delta hedger: Black-Scholes functional with realised-variance input.
 
-    Uses the BS delta formula with sigma replaced by sqrt(V_k) at
-    each time step.  This is a Markovian rule that OBSERVES variance
-    (unlike BS which uses a fixed sigma) but is still misspecified
-    under rough volatility because it ignores path dependence.
+    Computes delta at each time step as Phi(d1(t, S_k; sqrt(V_k))), where V_k is
+    an externally supplied instantaneous-variance input. This is NOT the Heston
+    PDE delta d u_Heston / d s; it is a BS functional with a plug-in variance
+    surrogate.
+
+    When V_k is the realised rough Bergomi variance, this hedger observes the
+    latent variance process and therefore represents a deliberately privileged-
+    information comparator relative to the deep hedger and the BS delta (which
+    do not observe V). It tests whether privileged access to the true
+    instantaneous variance, when projected through a Markovian one-step delta,
+    is sufficient to out-hedge BS under rough dynamics.
+
+    This class was previously named HestonDelta; the rename reflects its true
+    mathematical content.
 
     Parameters
     ----------
@@ -194,3 +204,74 @@ class HestonDelta:
         d1 = _bs_d1(S_k, self.K, tau, sigma_k, self.r)
         delta = _normal_cdf(d1)
         return torch.clamp(delta, 0.0, 1.0)
+
+
+# ---------------------------------------------------------------------------
+# Leland cost-adjusted delta hedger
+# ---------------------------------------------------------------------------
+
+class LelandDelta(BlackScholesDelta):
+    """Leland-adjusted BS delta for proportional transaction costs.
+
+    Implements Leland (1985): the BS delta with a volatility input
+    inflated by a cost-dependent factor to compensate for expected
+    proportional-cost drag under discrete rebalancing:
+
+        sigma_Leland = sigma * sqrt(1 + sqrt(8/pi) * lam / (sigma * sqrt(dt)))
+
+    where dt = T / n_steps. At lam = 0 this reduces exactly to
+    Black-Scholes delta.
+
+    Reference: H. E. Leland, "Option Pricing and Replication with
+    Transactions Costs", Journal of Finance 40(5):1283-1301, 1985.
+
+    Parameters
+    ----------
+    sigma : float
+        Assumed (base) volatility.
+    K : float
+        Strike price.
+    T : float
+        Option maturity.
+    lam : float
+        Proportional cost coefficient (>= 0).
+    n_steps : int
+        Number of rebalancing steps (must be >= 1). Used to compute dt.
+    r : float
+        Risk-free rate (default 0).
+    """
+
+    def __init__(
+        self,
+        sigma: float,
+        K: float,
+        T: float,
+        lam: float,
+        n_steps: int,
+        r: float = 0.0,
+    ) -> None:
+        if lam < 0.0:
+            raise ValueError(f"lam must be non-negative, got {lam}")
+        if n_steps < 1:
+            raise ValueError(f"n_steps must be >= 1, got {n_steps}")
+        if sigma <= 0.0:
+            raise ValueError(f"sigma must be positive, got {sigma}")
+
+        dt = T / n_steps
+        if lam == 0.0:
+            sigma_leland = sigma
+        else:
+            sigma_leland = sigma * math.sqrt(
+                1.0 + math.sqrt(8.0 / math.pi) * lam / (sigma * math.sqrt(dt))
+            )
+
+        super().__init__(sigma=sigma_leland, K=K, T=T, r=r)
+        self.sigma_base = sigma
+        self.lam = lam
+        self.n_steps = n_steps
+        self.dt = dt
+        self.sigma_leland = sigma_leland
+
+
+# Deprecated alias — will be removed in a future commit.
+HestonDelta = PluginDelta

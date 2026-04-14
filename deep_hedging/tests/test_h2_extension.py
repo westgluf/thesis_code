@@ -195,6 +195,80 @@ def test_reversal_detection() -> Tuple[bool, str]:
 
 
 # -----------------------------------------------------------------------
+# Leland tests
+# -----------------------------------------------------------------------
+
+def test_leland_delta_zero_cost_matches_bs() -> Tuple[bool, str]:
+    """Leland at lam=0 must be identical to BS."""
+    from deep_hedging.hedging.delta_hedger import BlackScholesDelta, LelandDelta
+
+    sigma, K, T = 0.235, 100.0, 1.0
+    n_steps = 50
+
+    bs = BlackScholesDelta(sigma=sigma, K=K, T=T)
+    ld = LelandDelta(sigma=sigma, K=K, T=T, lam=0.0, n_steps=n_steps)
+
+    sigma_ok = ld.sigma_leland == sigma
+    torch.manual_seed(0)
+    S = torch.rand(16, n_steps + 1) * 10 + 100.0
+    delta_ok = bool(torch.allclose(bs.hedge_paths(S), ld.hedge_paths(S)))
+    passed = sigma_ok and delta_ok
+    return passed, f"sigma_match={sigma_ok}, delta_match={delta_ok}"
+
+
+def test_leland_delta_monotone_in_lambda() -> Tuple[bool, str]:
+    """sigma_Leland must grow monotonically with lam at fixed n."""
+    from deep_hedging.hedging.delta_hedger import LelandDelta
+    sigma, K, T = 0.235, 100.0, 1.0
+    n_steps = 100
+
+    prev = sigma
+    all_mono = True
+    for lam in [0.0, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2]:
+        ld = LelandDelta(sigma=sigma, K=K, T=T, lam=lam, n_steps=n_steps)
+        if ld.sigma_leland < prev - 1e-12:
+            all_mono = False
+        prev = ld.sigma_leland
+    return all_mono, f"monotone={all_mono}, final_sigma={prev:.4f}"
+
+
+def test_leland_formula_matches_literature() -> Tuple[bool, str]:
+    """Hand-computed Leland sigma for a specific tuple."""
+    from deep_hedging.hedging.delta_hedger import LelandDelta
+    sigma, lam, T, n_steps = 0.2, 0.001, 1.0, 100
+    dt = T / n_steps
+    expected = sigma * math.sqrt(
+        1.0 + math.sqrt(8.0 / math.pi) * lam / (sigma * math.sqrt(dt))
+    )
+    ld = LelandDelta(sigma=sigma, K=100.0, T=T, lam=lam, n_steps=n_steps)
+    ok = abs(ld.sigma_leland - expected) < 1e-14
+    return ok, f"computed={ld.sigma_leland:.8f}, expected={expected:.8f}"
+
+
+def test_leland_rejects_invalid_inputs() -> Tuple[bool, str]:
+    """LelandDelta must reject negative lam, zero sigma, zero n_steps."""
+    from deep_hedging.hedging.delta_hedger import LelandDelta
+    errors = []
+    try:
+        LelandDelta(sigma=0.2, K=100, T=1, lam=-0.001, n_steps=100)
+        errors.append("accepted negative lam")
+    except ValueError:
+        pass
+    try:
+        LelandDelta(sigma=0.0, K=100, T=1, lam=0.001, n_steps=100)
+        errors.append("accepted zero sigma")
+    except ValueError:
+        pass
+    try:
+        LelandDelta(sigma=0.2, K=100, T=1, lam=0.001, n_steps=0)
+        errors.append("accepted zero n_steps")
+    except ValueError:
+        pass
+    passed = len(errors) == 0
+    return passed, f"errors={errors}" if errors else "All invalid inputs rejected"
+
+
+# -----------------------------------------------------------------------
 # Runner
 # -----------------------------------------------------------------------
 
@@ -206,6 +280,10 @@ def main() -> None:
         ("4. BS delta cost monotonicity",        test_bs_delta_cost_monotonic),
         ("5. Prompt 9 loader",                   test_prompt_9_loader),
         ("6. Reversal detection logic",          test_reversal_detection),
+        ("7. Leland lam=0 matches BS",           test_leland_delta_zero_cost_matches_bs),
+        ("8. Leland monotone in lambda",         test_leland_delta_monotone_in_lambda),
+        ("9. Leland formula vs literature",      test_leland_formula_matches_literature),
+        ("10. Leland rejects invalid inputs",    test_leland_rejects_invalid_inputs),
     ]
 
     print("=" * 65, flush=True)
@@ -227,7 +305,7 @@ def main() -> None:
 
     print("-" * 65, flush=True)
     if all_passed:
-        print(" All 6 tests PASSED.", flush=True)
+        print(f" All {len(tests)} tests PASSED.", flush=True)
     else:
         print(" Some tests FAILED.", flush=True)
         sys.exit(1)

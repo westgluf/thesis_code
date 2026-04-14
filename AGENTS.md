@@ -32,6 +32,29 @@ Runner must create in `results/gbm_deephedge`:
 
 `std_PL`, `ES_loss_0.95`, `VaR_loss_0.95`, `ES_loss_0.99`, `VaR_loss_0.99`
 
-## Premium convention
+## Premium convention (two regimes)
 
-`p0 = bs_call_price_discounted(0, S0, K, sigma_true, T)` — BS analytical price, not MC estimate.
+The premium `p_0` used when computing terminal P&L follows two
+conventions depending on the data-generating model:
+
+1. **GBM benchmark (Section 6.2)**:
+   `p_0 = bs_call_price_discounted(0, S_0, K, sigma_true, T)` —
+   the Black-Scholes analytical price under the true (and assumed)
+   volatility. Exact because the model is complete and has closed
+   form. Implemented in `src/run_benchmark_gbm_grid.py` and related
+   GBM scripts.
+
+2. **Rough Bergomi (Section 6.3, Section 7)**:
+   `p_0 = float(compute_payoff(S_train, K, "call").mean())` —
+   a Monte Carlo estimate of `E_true[Z]` on the training paths. Used
+   because rough Bergomi has no closed-form European-call price.
+   Implemented in `run_unified_baseline.py`, `run_section_6_3_baseline.py`,
+   `diagnostic_controls.py`, `h2_grid_extension.py`, and other rough-
+   Bergomi experiments.
+
+Both conventions are consistent with thesis Definition 4.16. The
+thesis footnote in Section 6.1 makes the two-regime distinction
+explicit to the reader.
+
+Never compute the MC premium on test paths — always on an independent
+training set — to avoid information leakage from test to premium.

@@ -2,7 +2,7 @@
 """
 Section 6.3 baseline experiment: Deep Hedger vs Delta Hedgers on rBergomi.
 
-Tests Hypothesis H1: under rough volatility dynamics, BS and Heston
+Tests Hypothesis H1: under rough volatility dynamics, BS and plug-in
 delta-hedges have heavier left P&L tails than a deep hedger trained
 on the same dynamics.
 
@@ -25,7 +25,7 @@ import numpy as np
 from scipy import stats as sp_stats
 
 from deep_hedging.core.rough_bergomi import DifferentiableRoughBergomi
-from deep_hedging.hedging.delta_hedger import BlackScholesDelta, HestonDelta
+from deep_hedging.hedging.delta_hedger import BlackScholesDelta, PluginDelta
 from deep_hedging.hedging.deep_hedger import (
     DeepHedgerFNN,
     hedge_paths_deep,
@@ -44,7 +44,7 @@ FIGURE_DIR = Path(__file__).resolve().parents[2] / "figures"
 # Consistent colour scheme across all figures
 COLORS = {
     "BS Delta": "#2196F3",
-    "Heston Delta": "#FF9800",
+    "Plug-in Delta": "#FF9800",
     "Deep Hedger": "#4CAF50",
 }
 
@@ -113,9 +113,9 @@ class Section63Experiment:
         pnl = compute_hedging_pnl(self.S_test, deltas, payoff, self.p0, cost_lambda)
         return {"deltas": deltas, "pnl": pnl, "metrics": compute_all_metrics(pnl)}
 
-    def run_heston_delta(self, cost_lambda: float = 0.0) -> dict[str, Any]:
-        """Run Heston plug-in delta hedger on test paths (observes V)."""
-        hedger = HestonDelta(K=self.K, T=self.T)
+    def run_plugin_delta(self, cost_lambda: float = 0.0) -> dict[str, Any]:
+        """Run plug-in delta hedger on test paths (observes V)."""
+        hedger = PluginDelta(K=self.K, T=self.T)
         deltas = hedger.hedge_paths(self.S_test, self.V_test)
         payoff = compute_payoff(self.S_test, self.K, "call")
         pnl = compute_hedging_pnl(self.S_test, deltas, payoff, self.p0, cost_lambda)
@@ -175,8 +175,8 @@ class Section63Experiment:
             print("\n  --- BS Delta ---")
             r["BS Delta"] = self.run_bs_delta(lam)
 
-            print("\n  --- Heston Delta ---")
-            r["Heston Delta"] = self.run_heston_delta(lam)
+            print("\n  --- Plug-in Delta ---")
+            r["Plug-in Delta"] = self.run_plugin_delta(lam)
 
             print(f"\n  --- Deep Hedger (training, lambda={lam}) ---")
             r["Deep Hedger"] = self.run_deep_hedger(cost_lambda=lam)
@@ -207,7 +207,7 @@ class Section63Experiment:
             label = "Frictionless" if lam == 0.0 else f"With costs ($\\lambda = {lam}$)"
             print(rf"\multicolumn{{7}}{{c}}{{\textit{{{label}}}}} \\")
             print(r"\hline")
-            for name in ["BS Delta", "Heston Delta", "Deep Hedger"]:
+            for name in ["BS Delta", "Plug-in Delta", "Deep Hedger"]:
                 m = strats[name]["metrics"]
                 print(
                     f"{name:15s} & {m['mean_pnl']:7.3f} & {m['std_pnl']:6.3f} "
@@ -246,7 +246,7 @@ class Section63Experiment:
         for ax_row, lam in zip(axes, lams):
             ax = ax_row[0]
             label = "Frictionless" if lam == 0.0 else f"With costs ($\\lambda={lam}$)"
-            for name in ["BS Delta", "Heston Delta", "Deep Hedger"]:
+            for name in ["BS Delta", "Plug-in Delta", "Deep Hedger"]:
                 pnl = results[lam][name]["pnl"].detach().float().numpy()
                 m = results[lam][name]["metrics"]
                 ax.hist(pnl, bins=80, alpha=0.45, density=True,
@@ -268,7 +268,7 @@ class Section63Experiment:
         """Figure 2: Left tail zoom."""
         lam = 0.0
         fig, ax = plt.subplots(figsize=(8, 5))
-        for name in ["BS Delta", "Heston Delta", "Deep Hedger"]:
+        for name in ["BS Delta", "Plug-in Delta", "Deep Hedger"]:
             pnl = results[lam][name]["pnl"].detach().float().numpy()
             cutoff = np.percentile(pnl, 10)
             tail = pnl[pnl < cutoff]
@@ -287,7 +287,7 @@ class Section63Experiment:
         """Figure 3: Q-Q plots vs normal."""
         lam = 0.0
         fig, axes = plt.subplots(1, 3, figsize=(14, 4.5))
-        for ax, name in zip(axes, ["BS Delta", "Heston Delta", "Deep Hedger"]):
+        for ax, name in zip(axes, ["BS Delta", "Plug-in Delta", "Deep Hedger"]):
             pnl = results[lam][name]["pnl"].detach().float().numpy()
             (osm, osr), (slope, intercept, _) = sp_stats.probplot(pnl, dist="norm")
             ax.scatter(osm, osr, s=2, alpha=0.3, color=COLORS[name])
@@ -307,7 +307,7 @@ class Section63Experiment:
         """Figure 4: Grouped bar chart of risk metrics."""
         metric_keys = ["es_95", "es_99", "var_95", "std_pnl"]
         labels = ["ES$_{95}$", "ES$_{99}$", "VaR$_{95}$", "Std"]
-        strat_names = ["BS Delta", "Heston Delta", "Deep Hedger"]
+        strat_names = ["BS Delta", "Plug-in Delta", "Deep Hedger"]
         lams = sorted(results.keys())
 
         n_metrics = len(metric_keys)
@@ -345,7 +345,7 @@ class Section63Experiment:
 
         for ax, k in zip(axes, steps):
             S_k = self.S_test[idx, k].detach().float().numpy()
-            for name in ["BS Delta", "Heston Delta", "Deep Hedger"]:
+            for name in ["BS Delta", "Plug-in Delta", "Deep Hedger"]:
                 d_k = results[lam][name]["deltas"][idx, k].detach().float().numpy()
                 ax.scatter(S_k, d_k, s=2, alpha=0.2, color=COLORS[name], label=name)
             ax.set_xlabel("Spot S")
@@ -368,7 +368,7 @@ class Section63Experiment:
         linestyles = ["-", "--", ":"]
 
         fig, ax = plt.subplots(figsize=(9, 5))
-        for name in ["BS Delta", "Heston Delta", "Deep Hedger"]:
+        for name in ["BS Delta", "Plug-in Delta", "Deep Hedger"]:
             deltas = results[lam][name]["deltas"]  # (n_test, n)
             S = self.S_test
             dS = (S[:, 1:] - S[:, :-1])            # (n_test, n)
@@ -438,7 +438,7 @@ def main() -> None:
     for lam, strats in results.items():
         tag = "frictionless" if lam == 0 else f"lambda={lam}"
         print(f"\n  [{tag}]")
-        for name in ["BS Delta", "Heston Delta", "Deep Hedger"]:
+        for name in ["BS Delta", "Plug-in Delta", "Deep Hedger"]:
             m = strats[name]["metrics"]
             print(f"    {name:15s}  mean={m['mean_pnl']:+.3f}  std={m['std_pnl']:.3f}"
                   f"  ES95={m['es_95']:.3f}  ES99={m['es_99']:.3f}"

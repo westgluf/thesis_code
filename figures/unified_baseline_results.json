@@ -1,0 +1,164 @@
+{
+  "meta": {
+    "master_test_seed": 2024,
+    "n_test": 50000,
+    "train_seed": 42,
+    "n_train": 80000,
+    "n_val": 10000,
+    "rbergomi": {
+      "H": 0.07,
+      "eta": 1.9,
+      "rho": -0.7,
+      "xi0": 0.055224999999999996,
+      "S0": 100.0,
+      "K": 100.0,
+      "T": 1.0,
+      "n_steps": 100
+    },
+    "dh_protocol": {
+      "input_dim": 4,
+      "hidden_dim": 128,
+      "n_res_blocks": 2,
+      "epochs": 200,
+      "patience": 30,
+      "lr": 0.001,
+      "batch_size": 2048,
+      "alpha": 0.95,
+      "loss": "smooth_cvar_rockafellar_uryasev"
+    },
+    "p0_mc_estimate": 8.019370479531133,
+    "train_set_path": "/Users/l/Desktop/thesis_code_copy/figures/unified_master_test_set.pt",
+    "checkpoints": {
+      "dh_full_budget": "/Users/l/Desktop/thesis_code_copy/figures/unified_dh_rbergomi_hedger.pt",
+      "dh_gbm_pretrained": "/Users/l/Desktop/thesis_code_copy/figures/gbm_pretrained_hedger.pt"
+    },
+    "source_script": "deep_hedging/experiments/run_unified_baseline.py",
+    "source_commit": "46fb9dbdc84f7fd8076fbf63e1d77a33a3074dea-dirty"
+  },
+  "results": {
+    "0.0": {
+      "BS Delta": {
+        "metrics": {
+          "mean_pnl": -0.014844047836959362,
+          "std_pnl": 4.0807414054870605,
+          "var_95": 6.466601848602295,
+          "es_95": 11.49431324005127,
+          "es_99": 21.417280197143555,
+          "entropic_1": 124.39627075195312,
+          "max_loss": 135.21604919433594,
+          "min_pnl": -135.21604919433594,
+          "skewness": -3.926621437072754,
+          "kurtosis": 59.8515625
+        },
+        "mean_turnover": 2.7189897644766834
+      },
+      "Plug-in Delta": {
+        "metrics": {
+          "mean_pnl": -0.01293779443949461,
+          "std_pnl": 5.057738304138184,
+          "var_95": 9.525328636169434,
+          "es_95": 15.330615043640137,
+          "es_99": 25.295560836791992,
+          "entropic_1": 57.000755310058594,
+          "max_loss": 67.80572509765625,
+          "min_pnl": -67.80572509765625,
+          "skewness": -2.362692356109619,
+          "kurtosis": 13.979225158691406
+        },
+        "mean_turnover": 8.766518718090941
+      },
+      "DH full-budget": {
+        "metrics": {
+          "mean_pnl": -0.00026324219652451575,
+          "std_pnl": 4.1004791259765625,
+          "var_95": 6.275064468383789,
+          "es_95": 10.32211685180664,
+          "es_99": 18.799386978149414,
+          "entropic_1": 115.68006896972656,
+          "max_loss": 126.49984741210938,
+          "min_pnl": -126.49984741210938,
+          "skewness": -2.7354977130889893,
+          "kurtosis": 42.60108184814453
+        },
+        "mean_turnover": 1.771844744682312
+      },
+      "DH GBM-pretrained": {
+        "metrics": {
+          "mean_pnl": -0.012163153849542141,
+          "std_pnl": 4.082554817199707,
+          "var_95": 6.392163276672363,
+          "es_95": 11.100448608398438,
+          "es_99": 20.611543655395508,
+          "entropic_1": 121.3017578125,
+          "max_loss": 132.1215362548828,
+          "min_pnl": -132.1215362548828,
+          "skewness": -3.607771396636963,
+          "kurtosis": 55.31646728515625
+        },
+        "mean_turnover": 2.5985093116760254
+      }
+    },
+    "0.001": {
+      "BS Delta": {
+        "metrics": {
+          "mean_pnl": -0.2852144241333008,
+          "std_pnl": 4.1161370277404785,
+          "var_95": 6.851119518280029,
+          "es_95": 11.912995338439941,
+          "es_99": 21.898447036743164,
+          "entropic_1": 124.84382629394531,
+          "max_loss": 135.66360473632812,
+          "min_pnl": -135.66360473632812,
+          "skewness": -3.901888847351074,
+          "kurtosis": 58.602333068847656
+        },
+        "mean_turnover": 2.7189897644766834
+      },
+      "Plug-in Delta": {
+        "metrics": {
+          "mean_pnl": -0.8748371601104736,
+          "std_pnl": 5.019343852996826,
+          "var_95": 10.25210189819336,
+          "es_95": 16.03974723815918,
+          "es_99": 25.95282745361328,
+          "entropic_1": 57.71380615234375,
+          "max_loss": 68.51434326171875,
+          "min_pnl": -68.51434326171875,
+          "skewness": -2.3565785884857178,
+          "kurtosis": 14.015926361083984
+        },
+        "mean_turnover": 8.766518718090941
+      },
+      "DH full-budget": {
+        "metrics": {
+          "mean_pnl": -0.17857328057289124,
+          "std_pnl": 4.127198696136475,
+          "var_95": 6.489749431610107,
+          "es_95": 10.595447540283203,
+          "es_99": 19.135543823242188,
+          "entropic_1": 115.95392608642578,
+          "max_loss": 126.7737045288086,
+          "min_pnl": -126.7737045288086,
+          "skewness": -2.7210140228271484,
+          "kurtosis": 41.951595306396484
+        },
+        "mean_turnover": 1.771844744682312
+      },
+      "DH GBM-pretrained": {
+        "metrics": {
+          "mean_pnl": -0.27027180790901184,
+          "std_pnl": 4.113034248352051,
+          "var_95": 6.719789505004883,
+          "es_95": 11.488277435302734,
+          "es_99": 21.06608772277832,
+          "entropic_1": 121.71966552734375,
+          "max_loss": 132.53944396972656,
+          "min_pnl": -132.53944396972656,
+          "skewness": -3.591726303100586,
+          "kurtosis": 54.37979507446289
+        },
+        "mean_turnover": 2.5985093116760254
+      }
+    }
+  }
+}

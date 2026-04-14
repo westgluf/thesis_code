@@ -33,7 +33,7 @@ import torch
 from torch import Tensor
 
 from deep_hedging.core.rough_bergomi import DifferentiableRoughBergomi
-from deep_hedging.hedging.delta_hedger import BlackScholesDelta
+from deep_hedging.hedging.delta_hedger import BlackScholesDelta, LelandDelta
 from deep_hedging.objectives.pnl import compute_payoff, compute_hedging_pnl
 from deep_hedging.objectives.risk_measures import compute_all_metrics
 from deep_hedging.utils.config import get_device, set_global_seed
@@ -204,6 +204,81 @@ def evaluate_bs_delta_at_costs(
     return out
 
 
+def evaluate_leland_delta_at_costs(
+    data: dict[str, Any],
+    cost_values: list[float],
+    *,
+    K: float = K,
+    T: float = T,
+    sigma: float = SIGMA_ASSUMED,
+) -> dict[float, dict[str, Any]]:
+    """Compute Leland-adjusted delta at each cost level.
+
+    Unlike BS, Leland delta depends on lambda (through sigma_Leland),
+    so hedging must be recomputed per cost level.
+    """
+    S = data["S"]
+    payoff = data["payoff"]
+    p0 = data["p0"]
+    n_steps = data["n_steps"]
+
+    out: dict[float, dict[str, Any]] = {}
+    for cost in cost_values:
+        hedger = LelandDelta(sigma=sigma, K=K, T=T, lam=cost, n_steps=n_steps)
+        deltas = hedger.hedge_paths(S)
+        turnover = _mean_turnover(deltas)
+        pnl = compute_hedging_pnl(S, deltas, payoff, p0, cost)
+        metrics = compute_all_metrics(pnl)
+        out[cost] = {
+            "metrics": metrics,
+            "mean_turnover": turnover,
+            "p0": p0,
+            "sigma_leland": hedger.sigma_leland,
+            "sigma_base": sigma,
+            "dt": hedger.dt,
+            "source": "fresh",
+        }
+        del deltas, pnl
+
+    return out
+
+
+def load_deep_pnl_cells(
+    freq_values: list[int],
+    cost_values: list[float],
+    figure_dir: Path = FIGURE_DIR,
+) -> dict[int, dict[float, dict[str, Any]]]:
+    """Load cached Deep hedger PnL tensors from pareto_A .pt files.
+
+    Returns {n_steps: {cost: cell_dict}} where available.
+    """
+    results: dict[int, dict[float, dict[str, Any]]] = {}
+    for n_steps in freq_values:
+        row: dict[float, dict[str, Any]] = {}
+        for cost in cost_values:
+            pt_path = figure_dir / f"pareto_A_n{n_steps}_cost{cost:.1g}_deep_pnl.pt"
+            if not pt_path.exists():
+                # Try alternate naming conventions
+                for fmt in [f"pareto_A_n{n_steps}_cost{cost}_deep_pnl.pt",
+                            f"pareto_A_n{n_steps}_cost{cost:.4f}_deep_pnl.pt"]:
+                    alt = figure_dir / fmt
+                    if alt.exists():
+                        pt_path = alt
+                        break
+            if pt_path.exists():
+                pnl = torch.load(pt_path, map_location="cpu", weights_only=True)
+                metrics = compute_all_metrics(pnl)
+                row[cost] = {
+                    "metrics": metrics,
+                    "mean_turnover": float("nan"),  # deltas not cached
+                    "p0": float("nan"),
+                    "source": str(pt_path.name),
+                }
+        if row:
+            results[n_steps] = row
+    return results
+
+
 # =======================================================================
 # Main grid driver
 # =======================================================================
@@ -215,15 +290,22 @@ def run_extended_grid(
     save_pnl_tensors: bool = False,
     device: torch.device | None = None,
 ) -> dict[int, dict[float, dict[str, Any]]]:
-    """Run the full frequency x cost BS delta grid."""
+    """Run the full frequency x cost grid with BS, Leland, and Deep strategies."""
     device = device or torch.device("cpu")
 
+    # Load cached Prompt 9 BS cells for reuse
     prompt_9_cells: dict[int, dict[float, dict]] = {}
     if reuse_prompt_9:
         prompt_9_cells = load_prompt_9_cells(PROMPT_9_JSON)
         if prompt_9_cells:
             total_reused = sum(len(v) for v in prompt_9_cells.values())
-            print(f"  Loaded {total_reused} cells from Prompt 9 Part A", flush=True)
+            print(f"  Loaded {total_reused} BS cells from Prompt 9 Part A", flush=True)
+
+    # Load cached Deep hedger PnL tensors
+    deep_cells = load_deep_pnl_cells(freq_values, cost_values)
+    deep_total = sum(len(v) for v in deep_cells.values())
+    if deep_total:
+        print(f"  Loaded {deep_total} Deep hedger cells from cached PnL tensors", flush=True)
 
     results: dict[int, dict[float, dict[str, Any]]] = {}
 
@@ -231,53 +313,73 @@ def run_extended_grid(
         print(f"\n  n_steps={n_steps}", flush=True)
         t0 = time.time()
 
-        # Pre-populate from Prompt 9 if available
-        row: dict[float, dict[str, Any]] = {}
+        # Determine which BS costs are already cached from Prompt 9
+        bs_cached: dict[float, dict[str, Any]] = {}
         if reuse_prompt_9 and n_steps in prompt_9_cells:
-            row.update(prompt_9_cells[n_steps])
-            skip = set(row.keys())
-            print(f"    reusing costs {sorted(skip)}", flush=True)
-        else:
-            skip = set()
+            bs_cached = prompt_9_cells[n_steps]
+            print(f"    reusing BS costs {sorted(bs_cached.keys())}", flush=True)
 
-        costs_to_compute = [c for c in cost_values if c not in skip]
-        if costs_to_compute:
+        bs_skip = set(bs_cached.keys())
+        costs_to_compute = [c for c in cost_values if c not in bs_skip]
+
+        # Generate paths once per frequency (shared by BS, Leland)
+        data = None
+        if costs_to_compute or True:  # always need paths for Leland
             data = generate_paths_for_freq(n_steps, device=device)
             print(f"    generated {N_TEST} paths "
                   f"(seed={data['seed']}, p0={data['p0']:.4f})", flush=True)
 
-            fresh_cells = evaluate_bs_delta_at_costs(
+        # Compute fresh BS cells
+        fresh_bs: dict[float, dict[str, Any]] = {}
+        if costs_to_compute and data is not None:
+            fresh_bs = evaluate_bs_delta_at_costs(
                 data, costs_to_compute,
-                skip_costs=skip,
+                skip_costs=bs_skip,
                 keep_pnl=save_pnl_tensors,
             )
-            for cost, cell in fresh_cells.items():
-                row[cost] = cell
-
-            # Optionally save PnL tensors
             if save_pnl_tensors:
-                for cost, cell in fresh_cells.items():
+                for cost, cell in fresh_bs.items():
                     if "pnl" in cell:
                         fname = f"h2_ext_n{n_steps}_cost{cost:.4f}_bs_pnl.pt"
                         torch.save(cell["pnl"], FIGURE_DIR / fname)
-                        # Remove from dict to avoid JSON serialisation issues
                         cell.pop("pnl", None)
 
+        # Compute Leland cells (all costs, since sigma_Leland depends on lambda)
+        leland_cells: dict[float, dict[str, Any]] = {}
+        if data is not None:
+            leland_cells = evaluate_leland_delta_at_costs(data, cost_values)
+
+        if data is not None:
             del data
             gc.collect()
-        else:
-            print(f"    all costs already loaded from Prompt 9", flush=True)
 
-        # Ensure row is sorted by cost
-        row_sorted = {c: row[c] for c in cost_values if c in row}
-        results[n_steps] = row_sorted
+        # Assemble three-strategy row
+        row: dict[float, dict[str, Any]] = {}
+        for c in cost_values:
+            cell: dict[str, Any] = {}
+            # BS
+            if c in bs_cached:
+                cell["BS"] = bs_cached[c]
+            elif c in fresh_bs:
+                cell["BS"] = fresh_bs[c]
+            # Leland
+            if c in leland_cells:
+                cell["Leland"] = leland_cells[c]
+            # Deep
+            if n_steps in deep_cells and c in deep_cells[n_steps]:
+                cell["Deep"] = deep_cells[n_steps][c]
+            else:
+                cell["Deep"] = {"unavailable": True}
+            row[c] = cell
 
-        dt = time.time() - t0
+        results[n_steps] = row
+
+        dt_elapsed = time.time() - t0
         es_snapshot = " ".join(
-            f"{row_sorted[c]['metrics']['es_95']:6.2f}"
-            for c in cost_values
+            f"{row[c]['BS']['metrics']['es_95']:6.2f}"
+            for c in cost_values if "BS" in row[c] and "metrics" in row[c]["BS"]
         )
-        print(f"    ES_95: [{es_snapshot}]  ({dt:.1f}s)", flush=True)
+        print(f"    BS ES_95: [{es_snapshot}]  ({dt_elapsed:.1f}s)", flush=True)
 
     return results
 
@@ -301,8 +403,13 @@ def print_full_grid_table(
 
     for n in freq_values:
         row_dict = results.get(n, {})
-        # Find minimum in row
-        values = [row_dict[c]["metrics"]["es_95"] for c in cost_values if c in row_dict]
+        # Extract BS ES_95 (handle both flat and nested schemas)
+        def _get_bs_es95(cell):
+            if "BS" in cell:
+                return cell["BS"]["metrics"]["es_95"]
+            return cell["metrics"]["es_95"]
+
+        values = [_get_bs_es95(row_dict[c]) for c in cost_values if c in row_dict]
         min_val = min(values) if values else None
 
         row_str = f"  {n:>6d}           "
@@ -310,7 +417,7 @@ def print_full_grid_table(
             if c not in row_dict:
                 row_str += f"{'  —  ':>9s}"
                 continue
-            v = row_dict[c]["metrics"]["es_95"]
+            v = _get_bs_es95(row_dict[c])
             marker = "*" if min_val is not None and abs(v - min_val) < 1e-6 else " "
             row_str += f"{v:>8.3f}{marker}"
         print(row_str, flush=True)
@@ -325,10 +432,15 @@ def print_turnover_table(
     print(f"\n  BS delta mean turnover (cost-independent):", flush=True)
     for n in freq_values:
         row_dict = results.get(n, {})
-        turnovers = {
-            c: row_dict[c]["mean_turnover"]
-            for c in cost_values if c in row_dict
-        }
+        turnovers = {}
+        for c in cost_values:
+            if c not in row_dict:
+                continue
+            cell = row_dict[c]
+            if "BS" in cell:
+                turnovers[c] = cell["BS"]["mean_turnover"]
+            elif "mean_turnover" in cell:
+                turnovers[c] = cell["mean_turnover"]
         if turnovers:
             vals = list(turnovers.values())
             avg = sum(vals) / len(vals)
@@ -363,8 +475,13 @@ def detect_reversal(
     reversal_costs: list[float] = []
 
     for c in cost_values:
+        def _cell_es95(cell):
+            if "BS" in cell:
+                return cell["BS"]["metrics"]["es_95"]
+            return cell["metrics"]["es_95"]
+
         es_by_n = {
-            n: results[n][c]["metrics"]["es_95"]
+            n: _cell_es95(results[n][c])
             for n in freq_values if c in results.get(n, {})
         }
         if not es_by_n:
@@ -466,6 +583,7 @@ def save_results(
             "S0": S0, "K": K, "T": T,
             "sigma_assumed": SIGMA_ASSUMED,
             "master_seed": MASTER_SEED,
+            "strategies": ["BS", "Leland", "Deep"],
         },
         "grid": _strip_for_json(results),
         "detection": _strip_for_json(detection),
@@ -484,7 +602,7 @@ def main() -> None:
     set_global_seed(MASTER_SEED)
 
     print("=" * 70, flush=True)
-    print("  H2 GRID EXTENSION  —  BS delta only", flush=True)
+    print("  H2 GRID EXTENSION  —  BS + Leland + Deep", flush=True)
     print("=" * 70, flush=True)
     print(f"  Frequencies: {FREQ_VALUES}", flush=True)
     print(f"  Costs:       {COST_VALUES}", flush=True)

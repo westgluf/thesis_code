@@ -136,6 +136,30 @@ class DiagnosticControlsExperiment:
         return r
 
     # -------------------------------------------------------------------
+    # Experiment A': eta=0, MSE objective (fourth 2x2 factorial cell)
+    # -------------------------------------------------------------------
+
+    def run_experiment_A_prime(self, n_train=60_000, n_val=10_000, n_test=30_000,
+                               epochs=150, seed=2024) -> dict:
+        """Experiment A': DH-MSE at eta=0, H=0.07.
+
+        This is the fourth cell of the 2x2 (eta, objective) factorial needed
+        to close the decomposition. Matches the seed / n_test / epochs of
+        Experiment A so the two are directly comparable. The ONLY difference
+        from A is the risk function: MSE instead of smooth CVaR.
+        """
+        print("\n  [A'] eta=0, MSE objective ...", end="", flush=True)
+        r = _run_single_point(
+            H=0.07, eta=0.0, n_train=n_train, n_val=n_val, n_test=n_test,
+            epochs=epochs, seed=seed,
+            risk_fn=lambda pnl: (pnl ** 2).mean(),
+            risk_label="mse",
+        )
+        print(f"  Gamma_A' = {r['gamma']:+.3f}  (ES_BS={r['es95_bs']:.3f}, ES_DH_MSE={r['es95_dh']:.3f})", flush=True)
+        self.results["A_prime"] = r
+        return r
+
+    # -------------------------------------------------------------------
     # Experiment B: eta-sweep
     # -------------------------------------------------------------------
 
@@ -257,6 +281,7 @@ class DiagnosticControlsExperiment:
     def run_all(self) -> dict[str, Any]:
         t0 = time.perf_counter()
         self.run_experiment_A()
+        self.run_experiment_A_prime()
         self.run_experiment_B()
         self.run_experiment_C()
         self.run_experiment_D()
@@ -309,6 +334,16 @@ class DiagnosticControlsExperiment:
                 lines.append("  --> Near-zero: BS is near-optimal at eta=0.")
             else:
                 lines.append(f"  --> Non-zero ({a['gamma']:+.3f}): objective/architecture effect exists.")
+
+        # A'
+        if "A_prime" in self.results:
+            ap = self.results["A_prime"]
+            lines += [
+                "", "EXPERIMENT A' (eta=0 with MSE objective)",
+                f"  ES_95 BS:       {ap['es95_bs']:.3f}",
+                f"  ES_95 DH-MSE:   {ap['es95_dh']:.3f}",
+                f"  Gamma_A':       {ap['gamma']:+.3f}",
+            ]
 
         # B
         if "B" in self.results:
@@ -537,17 +572,48 @@ class DiagnosticControlsExperiment:
 # -----------------------------------------------------------------------
 
 def main() -> None:
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Diagnostic controls: decompose the deep hedging advantage.",
+    )
+    parser.add_argument(
+        "--only", type=str, default=None,
+        help="Run only this experiment (e.g. 'A_prime'). "
+             "Merges result into existing JSON without overwriting other keys.",
+    )
+    args = parser.parse_args()
+
+    json_path = FIGURE_DIR / "diagnostic_controls_results.json"
+
     print("=" * 60, flush=True)
     print("  Diagnostic Controls: Decomposing the Advantage", flush=True)
     print("=" * 60, flush=True)
 
     exp = DiagnosticControlsExperiment()
-    exp.run_all()
-    exp.generate_report()
 
-    print("\n  Generating figures ...", flush=True)
-    exp.generate_figures(FIGURE_DIR)
-    exp.save_results(FIGURE_DIR / "diagnostic_controls_results.json")
+    if args.only is not None:
+        # Run a single experiment and merge into existing JSON
+        method_name = f"run_experiment_{args.only}"
+        fn = getattr(exp, method_name, None)
+        if fn is None:
+            raise ValueError(f"No experiment method '{method_name}' found.")
+        fn()
+
+        # Merge into existing JSON
+        if json_path.exists():
+            with open(json_path) as f:
+                existing = json.load(f)
+            existing[args.only] = exp.results[args.only]
+            exp.results = existing
+        exp.save_results(json_path)
+        exp.generate_report()
+    else:
+        exp.run_all()
+        exp.generate_report()
+        print("\n  Generating figures ...", flush=True)
+        exp.generate_figures(FIGURE_DIR)
+        exp.save_results(json_path)
 
     print("\n" + "=" * 60, flush=True)
     print("  DONE", flush=True)

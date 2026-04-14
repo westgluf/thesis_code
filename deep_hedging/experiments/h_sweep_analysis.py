@@ -46,7 +46,11 @@ class HSweepAnalyser:
 
     def _load_results(self) -> list[dict]:
         with open(self.results_path) as f:
-            return json.load(f)
+            data = json.load(f)
+        # Handle both old (list) and new (dict with "results" key) schema
+        if isinstance(data, list):
+            return data
+        return data.get("results", data)
 
     # ------------------------------------------------------------------
     # Power-law fit
@@ -412,10 +416,124 @@ class HSweepAnalyser:
 
 
 # ---------------------------------------------------------------------------
+# Standalone bootstrap functions (callable without class)
+# ---------------------------------------------------------------------------
+
+def bootstrap_power_law_slope(
+    H_values: np.ndarray,
+    gamma_values: np.ndarray,
+    n_bootstrap: int = 10_000,
+    seed: int = 2024,
+) -> dict:
+    """Panel bootstrap over regression points for the log-log slope.
+
+    Resamples the (x, y) pairs with replacement and refits the log-log
+    regression log Gamma(H) = log c + beta * log(1/2 - H).
+    """
+    rng = np.random.default_rng(seed)
+    mask = (gamma_values > 0) & (H_values < 0.499)
+    log_x = np.log(0.5 - H_values[mask])
+    log_y = np.log(gamma_values[mask])
+    n = len(log_x)
+
+    if n < 3:
+        nan = float("nan")
+        return {"beta_hat": nan, "beta_se_ols": nan,
+                "beta_ci_bootstrap_95": [nan, nan],
+                "beta_ci_bootstrap_68": [nan, nan],
+                "beta_samples_mean": nan, "beta_samples_std": nan,
+                "r_squared_bootstrap_mean": nan,
+                "n_bootstrap": n_bootstrap, "seed": seed}
+
+    samples = np.empty(n_bootstrap)
+    r2s = np.empty(n_bootstrap)
+    for b in range(n_bootstrap):
+        idx = rng.integers(0, n, size=n)
+        fit = np.polyfit(log_x[idx], log_y[idx], 1, cov=False)
+        samples[b] = fit[0]
+        y_fit = np.polyval(fit, log_x[idx])
+        ss_res = np.sum((log_y[idx] - y_fit) ** 2)
+        ss_tot = np.sum((log_y[idx] - np.mean(log_y[idx])) ** 2)
+        r2s[b] = 1.0 - ss_res / max(ss_tot, 1e-30)
+
+    beta_full, cov = np.polyfit(log_x, log_y, 1, cov=True)
+    return {
+        "beta_hat":             float(beta_full[0]),
+        "beta_se_ols":          float(np.sqrt(cov[0, 0])),
+        "beta_ci_bootstrap_95": [float(np.quantile(samples, 0.025)),
+                                 float(np.quantile(samples, 0.975))],
+        "beta_ci_bootstrap_68": [float(np.quantile(samples, 0.16)),
+                                 float(np.quantile(samples, 0.84))],
+        "beta_samples_mean":    float(samples.mean()),
+        "beta_samples_std":     float(samples.std(ddof=1)),
+        "r_squared_bootstrap_mean": float(np.nanmean(r2s)),
+        "n_bootstrap":          n_bootstrap,
+        "seed":                 seed,
+    }
+
+
+def compute_slope_noise_floor(
+    H_values: np.ndarray,
+    es_halfwidth_per_point: float,
+    gamma_values: np.ndarray,
+) -> dict:
+    """Monte Carlo noise floor for the log-log slope.
+
+    Translates per-point ES estimator noise into equivalent slope units.
+    If |beta_hat| < beta_noise_floor, the slope is indistinguishable
+    from zero given the current MC budget.
+    """
+    mask = (gamma_values > 0) & (H_values < 0.499)
+    log_x = np.log(0.5 - H_values[mask])
+    x_range = float(log_x.max() - log_x.min())
+    gamma_median = float(np.median(np.abs(gamma_values[mask])))
+    relative = es_halfwidth_per_point / gamma_median if gamma_median > 1e-12 else float("inf")
+    beta_noise = 2.0 * relative / x_range if x_range > 1e-12 else float("inf")
+    beta_full = float(np.polyfit(log_x, np.log(gamma_values[mask]), 1)[0])
+    return {
+        "es_halfwidth_per_point":  es_halfwidth_per_point,
+        "x_range_log":             x_range,
+        "gamma_median":            gamma_median,
+        "relative_halfwidth":      relative,
+        "beta_noise_floor":        float(beta_noise),
+        "beta_hat":                beta_full,
+        "beta_inside_noise_band":  abs(beta_full) < beta_noise,
+    }
+
+
+def _estimate_es_halfwidth(gamma_values: np.ndarray, n_test: int = 50_000,
+                           alpha: float = 0.95) -> float:
+    """Analytical estimate of 95% CI halfwidth for ES difference (Gamma).
+
+    Uses the Normal approximation on the tail sample. For rBergomi PnL
+    at the dissertation calibration, sigma_tail ~ 10 (empirical ballpark
+    from the unified-baseline PnL distributions).
+
+    Gamma = ES_BS - ES_DH involves two independent ES estimates, so the
+    noise on the difference is sqrt(2) * SE(ES).
+    """
+    tail_n = int(n_test * (1.0 - alpha))
+    # Conservative tail volatility: typical rBergomi tail std ~ 10
+    sigma_tail = 10.0
+    se_single = sigma_tail / math.sqrt(max(tail_n, 1))
+    # Gamma involves two independent ES estimates
+    return 1.96 * math.sqrt(2) * se_single
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
 def main() -> None:
+    import argparse
+    import subprocess
+    from datetime import datetime
+
+    parser = argparse.ArgumentParser(description="H-sweep analysis.")
+    parser.add_argument("--with-bootstrap", action="store_true",
+                        help="Compute panel bootstrap and noise floor; persist to JSON.")
+    args = parser.parse_args()
+
     print("=" * 60, flush=True)
     print("  H-Sweep Analysis", flush=True)
     print("=" * 60, flush=True)
@@ -432,9 +550,134 @@ def main() -> None:
     analyser.generate_all_figures(FIGURE_DIR)
     analyser.export_latex_table(FIGURE_DIR / "h_sweep_table.tex")
 
+    if args.with_bootstrap:
+        print("\n  Running panel bootstrap (10k replicates) ...", flush=True)
+        panel = bootstrap_power_law_slope(
+            analyser.H_values, analyser.gamma, n_bootstrap=10_000, seed=2024)
+
+        print(f"    beta_hat = {panel['beta_hat']:.4f}")
+        print(f"    beta_se_ols = {panel['beta_se_ols']:.4f}")
+        print(f"    95% CI = [{panel['beta_ci_bootstrap_95'][0]:.4f}, "
+              f"{panel['beta_ci_bootstrap_95'][1]:.4f}]")
+
+        # Noise floor (analytical fallback — no per-H PnL tensors cached)
+        halfwidth = _estimate_es_halfwidth(analyser.gamma)
+        noise = compute_slope_noise_floor(
+            analyser.H_values, halfwidth, analyser.gamma)
+        print(f"    noise floor = {noise['beta_noise_floor']:.4f}")
+        print(f"    |beta| inside noise band: {noise['beta_inside_noise_band']}")
+
+        # Git SHA
+        try:
+            sha = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL,
+            ).decode().strip()
+        except Exception:
+            sha = "unknown"
+
+        # Persist to JSON
+        json_path = FIGURE_DIR / "h_sweep_results.json"
+        with open(json_path) as f:
+            data = json.load(f)
+
+        # If data is a list (old schema), wrap it
+        if isinstance(data, list):
+            data = {"results": data}
+
+        data["bootstrap"] = {
+            "panel_slope": panel,
+            "noise_floor": noise,
+            "per_h_bootstrap_available": False,
+            "meta": {
+                "source_script": "deep_hedging/experiments/h_sweep_analysis.py",
+                "source_commit": sha,
+                "generated_at": datetime.now().isoformat(),
+            },
+        }
+        with open(json_path, "w") as f:
+            json.dump(data, f, indent=2)
+        print(f"\n  Bootstrap block written to {json_path}")
+
+        # LaTeX table
+        tex_path = FIGURE_DIR / "h_sweep_bootstrap_table.tex"
+        lo95, hi95 = panel["beta_ci_bootstrap_95"]
+        inside_str = "Yes" if noise["beta_inside_noise_band"] else "No"
+        tex_lines = [
+            r"\begin{tabular}{lr}",
+            r"\toprule",
+            r"Quantity & Value \\",
+            r"\midrule",
+            f"$\\hat\\beta$ (point estimate) & {panel['beta_hat']:.4f} \\\\",
+            f"OLS standard error & $\\pm${panel['beta_se_ols']:.4f} \\\\",
+            f"Bootstrap 95\\% CI for $\\hat\\beta$ & [{lo95:.4f}, {hi95:.4f}] \\\\",
+            f"Bootstrap mean $R^2$ & {panel['r_squared_bootstrap_mean']:.3f} \\\\",
+            f"MC noise floor $\\beta_{{\\mathrm{{noise}}}}$ & {noise['beta_noise_floor']:.4f} \\\\",
+            f"$|\\hat\\beta|$ inside noise band & {inside_str} \\\\",
+            r"\bottomrule",
+            r"\end{tabular}",
+        ]
+        tex_path.write_text("\n".join(tex_lines))
+        print(f"  Saved {tex_path}")
+
+        # Bootstrap figure (separate from existing)
+        _fig_gamma_loglog_bootstrap(analyser, fit, panel, noise, FIGURE_DIR)
+
     print("\n" + "=" * 60, flush=True)
     print("  DONE", flush=True)
     print("=" * 60, flush=True)
+
+
+def _fig_gamma_loglog_bootstrap(
+    analyser: HSweepAnalyser, fit: dict, panel: dict,
+    noise: dict, save_dir: Path,
+) -> None:
+    """Log-log plot with bootstrap envelope and noise floor."""
+    mask = (analyser.gamma > 0) & (analyser.H_values < 0.499)
+    x_plot = 0.5 - analyser.H_values[mask]
+    y_plot = analyser.gamma[mask]
+
+    fig, ax = plt.subplots(figsize=(9, 6))
+    ax.scatter(x_plot, y_plot, color=C_GAM, s=60, zorder=5, edgecolors="k", lw=0.5)
+
+    if np.isfinite(fit.get("beta", float("nan"))):
+        xs = np.linspace(x_plot.min() * 0.8, x_plot.max() * 1.2, 100)
+        y_fit = fit["c"] * xs ** fit["beta"]
+        ax.plot(xs, y_fit, "--", color=C_FIT, lw=2,
+                label=f"Fit: $\\beta$={fit['beta']:.3f}")
+
+        # Bootstrap envelope: use 68% CI on beta
+        lo68, hi68 = panel["beta_ci_bootstrap_68"]
+        y_lo = fit["c"] * xs ** lo68
+        y_hi = fit["c"] * xs ** hi68
+        ax.fill_between(xs, y_lo, y_hi, alpha=0.15, color=C_FIT,
+                        label="68% bootstrap envelope")
+        lo95, hi95 = panel["beta_ci_bootstrap_95"]
+        y_lo95 = fit["c"] * xs ** lo95
+        y_hi95 = fit["c"] * xs ** hi95
+        ax.fill_between(xs, y_lo95, y_hi95, alpha=0.07, color=C_FIT,
+                        label="95% bootstrap envelope")
+
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel("$1/2 - H$", fontsize=12)
+    ax.set_ylabel("$\\Gamma(H)$", fontsize=12)
+    ax.set_title("H-sweep: Power-law fit with bootstrap CIs", fontsize=13)
+
+    # Annotation box
+    lo95, hi95 = panel["beta_ci_bootstrap_95"]
+    ax.text(0.02, 0.02,
+            f"$\\hat{{\\beta}}$ = {panel['beta_hat']:.3f}\n"
+            f"95% CI: [{lo95:.3f}, {hi95:.3f}]\n"
+            f"Noise floor: {noise['beta_noise_floor']:.3f}",
+            transform=ax.transAxes, fontsize=9, va="bottom",
+            bbox=dict(boxstyle="round,pad=0.3", fc="wheat", alpha=0.8))
+
+    ax.legend(fontsize=9, loc="upper right")
+    ax.grid(True, alpha=0.3, which="both")
+    fig.tight_layout()
+    fig.savefig(save_dir / "fig_h_sweep_gamma_loglog_bootstrap.png", dpi=300)
+    plt.close(fig)
+    print(f"  Saved {save_dir / 'fig_h_sweep_gamma_loglog_bootstrap.png'}")
 
 
 if __name__ == "__main__":
