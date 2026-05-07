@@ -1,0 +1,48 @@
+{
+  "benchmark": {
+    "campaign_id": "main_benchmark",
+    "campaign_role": "main",
+    "is_benchmark_eligible": true,
+    "robust_sigmas": [
+      0.15,
+      0.2,
+      0.25
+    ],
+    "run_mode": "benchmark",
+    "training_regime": "oracle"
+  },
+  "data": {
+    "K": 1.0,
+    "N_test": 100000,
+    "N_train": 50000,
+    "N_val": 10000,
+    "S0": 1.0,
+    "T": 1.0,
+    "lam_cost": 0.0,
+    "n": 50,
+    "seed": 0,
+    "sigma_bar": 0.2,
+    "sigma_true": 0.2
+  },
+  "features": {
+    "feature_set": "B",
+    "sigma_in": 0.2
+  },
+  "model": {
+    "depth": 4,
+    "hidden": 128
+  },
+  "objective": {
+    "alpha": 0.95,
+    "name": "cvar"
+  },
+  "out_dir": "results/gbm_recheck/cell_sigma20_lambda0_seed0",
+  "train": {
+    "batch_size": 2048,
+    "epochs": 60,
+    "lr": 0.0003,
+    "patience": 10,
+    "reg_delta_l2": 0.0001,
+    "weight_decay": 0.0
+  }
+}

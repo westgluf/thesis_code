@@ -1,0 +1,36 @@
+{
+  "description": "(eta=0, MSE) decomposition corner",
+  "canonical_n100": {
+    "gamma": -0.020362,
+    "es95_bs": 1.764054,
+    "es95_dh": 1.784416,
+    "source": "figures/diagnostic_controls_results.json[A_prime]"
+  },
+  "n400_per_seed": {
+    "7711": {
+      "es95_bs": 0.9041519165039062,
+      "es95_dh": 0.8969826102256775,
+      "gamma": 0.00716930627822876
+    }
+  },
+  "n400_aggregated": {
+    "gamma_mean": 0.00716930627822876,
+    "gamma_std": 0,
+    "ci_low": 0.0037397656603034624,
+    "ci_high": 0.01031386143199268,
+    "es95_bs": 0.9041519165039062,
+    "es95_dh": 0.8969826102256775
+  },
+  "comparison": {
+    "delta_abs": 0.02753130627822876,
+    "delta_rel": 1.3520924406677473,
+    "canonical_in_ci": false,
+    "sign_preserved": true
+  },
+  "cell_verdict": "CELL_SIGN_FLIP",
+  "cell_name": "A",
+  "seeds": [
+    7711
+  ],
+  "wall_clock_s": 3535.866937166
+}

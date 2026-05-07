@@ -1,0 +1,44 @@
+cff-version: 1.2.0
+message: |
+  If you use this code or its results in academic work, please cite
+  both the dissertation (preferred for the methodology) and this
+  software (for the implementation).
+title: "Deep Hedging under Rough Volatility: Robustness to Model Misspecification (code release)"
+abstract: |
+  Reference implementation of the deep hedging framework for
+  European options under rough Bergomi dynamics with proportional
+  transaction costs, evaluated against Black-Scholes and Heston
+  PDE delta benchmarks across four model-risk axes. Includes the
+  hybrid-scheme rough volatility simulator, the residual-block
+  deep hedger, and a 5-seed canonical baseline reproducible to
+  byte-identical precision under the App A.7 environment pins.
+type: software
+authors:
+  - family-names: Degtiarenko
+    given-names: Nikita
+    affiliation: "University of Manchester, School of Mathematics"
+    orcid: ""
+repository-code: "https://github.com/westgluf/thesis_code"
+license: MIT
+version: "1.0.0"
+date-released: "2026-05-07"
+keywords:
+  - deep-hedging
+  - rough-volatility
+  - rough-bergomi
+  - expected-shortfall
+  - robust-hedging
+  - model-risk
+  - stochastic-volatility
+preferred-citation:
+  type: thesis
+  thesis-type: "MMath dissertation"
+  institution:
+    name: "University of Manchester, School of Mathematics"
+  authors:
+    - family-names: Degtiarenko
+      given-names: Nikita
+  title: "Deep Hedging under Rough Volatility: Robustness to Model Misspecification"
+  year: 2025
+  month: 11
+  url: "https://github.com/westgluf/thesis_code"

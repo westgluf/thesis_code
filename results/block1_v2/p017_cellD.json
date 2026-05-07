@@ -1,0 +1,30 @@
+{
+  "description": "Transfer learning GBM-pretrained on rBergomi",
+  "canonical_n100": {
+    "gamma": 0.393865,
+    "es95_bs": 11.494313,
+    "es95_dh": 11.100449,
+    "source": "figures/unified_baseline_results.json[DH GBM-pretrained]"
+  },
+  "n400_results": {
+    "es95_bs": 9.693666458129883,
+    "es95_dh": 9.299220085144043,
+    "gamma": 0.39444637298583984,
+    "ci_low": 0.3617024289295295,
+    "ci_high": 0.426091217973366
+  },
+  "comparison": {
+    "delta_abs": 0.0005813729858398231,
+    "delta_rel": 0.0014760717145172763,
+    "canonical_in_ci": true,
+    "sign_preserved": true
+  },
+  "cell_verdict": "CELL_PRESERVED",
+  "cell_name": "D",
+  "seeds": [
+    7741,
+    7742,
+    7743
+  ],
+  "wall_clock_s": 63.158508041873574
+}

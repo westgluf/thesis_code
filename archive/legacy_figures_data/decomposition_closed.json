@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "source_script": "deep_hedging/experiments/build_decomposition.py",
+    "inputs": "/Users/l/Desktop/thesis_code_copy/figures/diagnostic_controls_results.json",
+    "baseline_definition": "es95_BS(eta=1.9, H=0.07) - es95_DH_ES(eta=1.9, H=0.07) on the diagnostic-controls test set (n_test=30000, seed=2024)",
+    "baseline_disclaimer": "This Gamma_total differs from the unified-baseline Gamma (unified_baseline_results.json) because the decomposition uses an independent diagnostic-controls test set. See Section 6.1 footnote in main.tex.",
+    "source_commit": "46fb9dbdc84f7fd8076fbf63e1d77a33a3074dea-dirty"
+  },
+  "factorial_2x2": {
+    "gamma_00_eta0_mse": -0.020361711151009043,
+    "gamma_01_eta0_es": 0.2329063868345851,
+    "gamma_10_eta1p9_mse": 0.36030239142087517,
+    "gamma_11_eta1p9_es": 0.8188385355121426,
+    "es95_values": {
+      "bs_eta0": 1.7640542648066155,
+      "bs_eta1p9": 11.11667347441259,
+      "dh_mse_eta0": 1.7844159759576246,
+      "dh_mse_eta1p9": 10.756371082991715,
+      "dh_es_eta0": 1.5311478779720304,
+      "dh_es_eta1p9": 10.297834938900447
+    }
+  },
+  "grid_3x3_anova": {
+    "H_values": [
+      0.05,
+      0.2,
+      0.5
+    ],
+    "eta_values": [
+      0.5,
+      1.9,
+      3.0
+    ],
+    "gamma_matrix": [
+      [
+        0.34380826854700075,
+        0.6181951137880439,
+        0.35007281550134906
+      ],
+      [
+        0.4640913275774645,
+        0.5033196313475994,
+        0.31330468439938386
+      ],
+      [
+        0.4558703701716893,
+        0.6577561225348596,
+        0.36186457334934374
+      ]
+    ],
+    "grand_mean": 0.45203143413519264,
+    "row_means_H": [
+      0.43735873261213126,
+      0.4269052144414826,
+      0.49183035535196423
+    ],
+    "col_means_eta": [
+      0.42125665543205154,
+      0.5930902892235009,
+      0.34174735775002557
+    ],
+    "SS_H": 0.007291707648300665,
+    "SS_eta": 0.0990217953215431,
+    "SS_total": 0.12220666084583258,
+    "SS_interaction": 0.015893157875988828,
+    "f_H": 0.05966702303976193,
+    "f_eta": 0.8102814906829187,
+    "f_interaction": 0.13005148627731944
+  },
+  "decomposition": {
+    "Gamma_total": 0.8188385355121426,
+    "Gamma_architecture": -0.020361711151009043,
+    "Gamma_objective": 0.3806641025718842,
+    "Gamma_dynamics": 0.25326809798559413,
+    "Gamma_stoch_vol": 0.20521845197819472,
+    "Gamma_roughness": 0.015111753437743127,
+    "Gamma_interaction_2x2": 0.20526804610567329,
+    "Gamma_interaction_dynamics": 0.03293789256965629,
+    "Gamma_interaction_total": 0.23820593867532958,
+    "percentages_of_total": {
+      "architecture": -2.486657658127168,
+      "objective": 46.488298493890234,
+      "stoch_vol": 25.062139002757217,
+      "roughness": 1.8455107792760976,
+      "interaction": 29.090709382203617
+    },
+    "closure_residual": 1.1102230246251565e-16
+  }
+}

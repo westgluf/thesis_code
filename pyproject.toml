@@ -1,0 +1,80 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "thesis-code"
+version = "1.0.0"
+description = "Code accompanying MMath thesis 'Deep Hedging under Rough Volatility: Robustness to Model Misspecification' (N. Degtiarenko, U. Manchester, 2025)"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+  { name = "Nikita Degtiarenko" }
+]
+requires-python = ">=3.11,<3.15"
+keywords = [
+  "deep-hedging",
+  "rough-volatility",
+  "rough-bergomi",
+  "expected-shortfall",
+  "robust-hedging",
+  "model-risk",
+  "stochastic-volatility",
+  "neural-networks",
+  "pytorch",
+  "quantitative-finance",
+  "thesis-code",
+]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: MacOS",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Scientific/Engineering :: Mathematics",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+  "matplotlib",
+  "numpy",
+  "PyYAML",
+  "scipy",
+  "torch",
+  "tqdm",
+]
+
+[project.urls]
+Homepage      = "https://github.com/westgluf/thesis_code"
+Documentation = "https://github.com/westgluf/thesis_code/blob/main/docs/REPRODUCIBILITY.md"
+Repository    = "https://github.com/westgluf/thesis_code"
+Issues        = "https://github.com/westgluf/thesis_code/issues"
+# Thesis canonical PDF will appear at the University of Manchester
+# research portal once cataloguing is complete; for now the GitHub
+# repository is the authoritative public-facing surface.
+Thesis        = "https://github.com/westgluf/thesis_code"
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff"]
+
+[project.scripts]
+# Section 6.2 (GBM benchmark) — src package:
+thesis-code-baseline-gbm = "src.run_gbm_baseline:main"
+thesis-code-train-gbm = "src.train_deephedge_gbm:main"
+thesis-code-benchmark-grid-gbm = "src.run_benchmark_gbm_grid:main"
+thesis-code-benchmark-stats-gbm = "src.rebuild_benchmark_statistics:main"
+thesis-code-smoke = "src.tools_cli:smoke_cli"
+thesis-code-guard = "src.tools_cli:guard_cli"
+# Section 6.3 + Appendix A (rough Bergomi) — deep_hedging package:
+dh-canonical-baseline = "deep_hedging.experiments.run_section_6_3_baseline:main"
+dh-eta-zero-control = "deep_hedging.experiments.eta_zero_control:main"
+dh-heston-pde = "deep_hedging.experiments.heston_pde_evaluation:main"
+dh-transfer-extended = "deep_hedging.experiments.transfer_extended:main"
+dh-perturbation-extended = "deep_hedging.experiments.perturbation_extended:main"
+
+[tool.setuptools.packages.find]
+include = ["src*", "deep_hedging*"]

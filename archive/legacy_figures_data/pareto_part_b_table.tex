@@ -1,0 +1,18 @@
+\begin{table}[h]
+\centering
+\small
+\caption{Pareto front of risk objectives under rBergomi($H{=}0.07$, $\eta{=}1.9$, $n{=}100$, $\lambda{=}0.001$). \checkmark\ marks strategies on the (mean P\&L, ES$_{95}$) Pareto front.}
+\label{tab:pareto_b}
+\begin{tabular}{l|rrrrr|l}
+\hline
+Objective & Mean & Std & $\mathrm{ES}_{95}$ & $\mathrm{ES}_{99}$ & Entropic($\lambda{=}1$) & Pareto \\
+\hline
+BS delta & -0.201 & 3.954 & 11.527 & 20.508 & 49.78 & dominated \\
+$\mathrm{ES}(\alpha{=}0.50)$ & -0.144 & 3.937 & 12.012 & 21.200 & 48.84 & dominated \\
+$\mathrm{ES}(\alpha{=}0.90)$ & -0.111 & 3.932 & 10.353 & 17.894 & 41.31 & dominated \\
+$\mathrm{ES}(\alpha{=}0.95)$ & -0.096 & 4.155 & 10.320 & 17.073 & 36.11 & \checkmark \\
+$\mathrm{ES}(\alpha{=}0.99)$ & -0.088 & 4.646 & 11.312 & 16.696 & 33.37 & \checkmark \\
+MSE & -0.144 & 3.807 & 10.855 & 18.832 & 40.44 & \checkmark\ (std) \\
+\hline
+\end{tabular}
+\end{table}

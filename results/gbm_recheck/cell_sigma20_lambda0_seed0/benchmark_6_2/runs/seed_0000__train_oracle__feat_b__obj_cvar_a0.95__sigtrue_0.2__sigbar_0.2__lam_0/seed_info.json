@@ -1,0 +1,7 @@
+{
+  "data_seed": 0,
+  "numpy_seed": 0,
+  "reproduce_command": "GBM_CFG=results/gbm_recheck/cell_sigma20_lambda0_seed0/benchmark_6_2/runs/seed_0000__train_oracle__feat_b__obj_cvar_a0.95__sigtrue_0.2__sigbar_0.2__lam_0/run_cfg.json python -m src.train_deephedge_gbm",
+  "torch_initial_seed": 0,
+  "torch_seed": 0
+}

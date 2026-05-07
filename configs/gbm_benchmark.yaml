@@ -1,0 +1,38 @@
+out_dir: "results/gbm_deephedge"
+
+data:
+  S0: 1.0
+  T: 1.0
+  n: 50
+  sigma_true: 0.2
+  sigma_bar: 0.2
+  lam_cost: 0.0
+  N_train: 50000
+  N_val: 10000
+  N_test: 100000
+  seed: 0
+  K: 1.0
+
+features:
+  feature_set: "B"
+  sigma_in: 0.2
+
+benchmark:
+  training_regime: "oracle"
+  robust_sigmas: [0.15, 0.20, 0.25]
+
+objective:
+  name: "cvar"
+  alpha: 0.95
+
+train:
+  epochs: 60
+  batch_size: 2048
+  lr: 0.0003
+  weight_decay: 0.0
+  patience: 10
+  reg_delta_l2: 0.0001
+
+model:
+  hidden: 128
+  depth: 4

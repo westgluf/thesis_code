@@ -1,0 +1,48 @@
+{
+  "description": "(eta=0, MSE) decomposition corner",
+  "canonical_n100": {
+    "gamma": -0.020362,
+    "es95_bs": 1.764054,
+    "es95_dh": 1.784416,
+    "source": "figures/diagnostic_controls_results.json[A_prime]"
+  },
+  "n400_per_seed": {
+    "7711": {
+      "es95_bs": 0.9041519165039062,
+      "es95_dh": 0.8969826102256775,
+      "gamma": 0.00716930627822876
+    },
+    "7712": {
+      "es95_bs": 0.9395495653152466,
+      "es95_dh": 0.9785587787628174,
+      "gamma": -0.0390092134475708
+    },
+    "7713": {
+      "es95_bs": 0.9562497138977051,
+      "es95_dh": 0.9921368360519409,
+      "gamma": -0.03588712215423584
+    }
+  },
+  "n400_aggregated": {
+    "gamma_mean": -0.022575676441192627,
+    "gamma_std": 0.025807166858161458,
+    "ci_low": -0.10938870833823705,
+    "ci_high": -0.0664861220726693,
+    "es95_bs": 0.9333170652389526,
+    "es95_dh": 0.9558927416801453
+  },
+  "comparison": {
+    "delta_abs": -0.0022136764411926253,
+    "delta_rel": -0.10871606134387139,
+    "canonical_in_ci": false,
+    "sign_preserved": true
+  },
+  "cell_verdict": "CELL_MODESTLY_SHIFTED",
+  "cell_name": "A",
+  "seeds": [
+    7711,
+    7712,
+    7713
+  ],
+  "wall_clock_s": 9381.914047708
+}

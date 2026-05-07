@@ -1,0 +1,34 @@
+{
+  "description": "H2 representative (lambda=0.001)",
+  "canonical_n100": {
+    "gamma": 1.080103,
+    "es95_bs": 11.491324,
+    "es95_dh": 10.411222,
+    "source": "figures/h2_grid_extension.json[grid][100][0.001]"
+  },
+  "variant_C_match": {
+    "n_rebal_effective": 400,
+    "es95_bs": 10.588311195373535,
+    "es95_dh": 9.009127616882324,
+    "gamma": 1.579183578491211,
+    "ci_low": 1.459885371857005,
+    "ci_high": 1.6991071647722293
+  },
+  "variant_C_subsample": {
+    "n_rebal_effective": 100,
+    "es95_bs": 10.441351890563965,
+    "es95_dh": 9.23949909210205,
+    "gamma": 1.201852798461914,
+    "ci_low": 1.064169944005758,
+    "ci_high": 1.3472334147630005
+  },
+  "cell_verdict": "CELL_PRESERVED",
+  "h2_confounding_assessment": "n_sim=n_rebal in canonical H2. C-subsample tests n_sim=400 with n_rebal=100, isolating simulation bias from hedging frequency.",
+  "cell_name": "C",
+  "seeds": [
+    7731,
+    7732,
+    7733
+  ],
+  "wall_clock_s": 16419.02379675
+}

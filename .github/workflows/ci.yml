@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, "release/*"]
+
+jobs:
+  section-6-2-gbm:
+    name: Section 6.2 (GBM benchmark) smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]" -r requirements.txt
+      - name: Clean
+        run: ./tools/clean.sh
+      - name: Compile
+        run: ./tools/compile.sh
+      - name: Smoke
+        run: ./tools/smoke.sh
+      - name: Guard
+        run: ./tools/guard.sh
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: section-6-2-results
+          path: |
+            results/gbm_baseline
+            results/gbm_deephedge
+
+  section-6-3-rbergomi:
+    name: Section 6.3 (rough Bergomi) tests (py${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]" -r requirements.txt
+      - name: Imports smoke
+        run: |
+          python -c "import deep_hedging.core.rough_bergomi; \
+                     import deep_hedging.core.volterra; \
+                     import deep_hedging.hedging.deep_hedger; \
+                     import deep_hedging.hedging.delta_hedger; \
+                     import deep_hedging.hedging.heston_pde_delta; \
+                     import deep_hedging.objectives.pnl; \
+                     import deep_hedging.objectives.risk_measures; \
+                     print('all KEEP-bucket imports OK')"
+      - name: Test suite
+        run: pytest deep_hedging/tests -x --tb=short -q

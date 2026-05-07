@@ -1,0 +1,60 @@
+{
+    "benchmark_name": "section_6_2_gbm",
+    "campaign_id": "main_benchmark",
+    "campaign_role": "main",
+    "claims_grid_experiment": true,
+    "feature_set": "B",
+    "feature_sets": [
+        "B"
+    ],
+    "is_benchmark_eligible": true,
+    "lambda_costs": [
+        0.0,
+        0.0001,
+        0.0005,
+        0.001
+    ],
+    "objective_name": "cvar",
+    "objective_names": [
+        "cvar"
+    ],
+    "objective_specs": [
+        {
+            "alpha": 0.95,
+            "label": "cvar_a0.95",
+            "name": "cvar"
+        }
+    ],
+    "planned_runs": 280,
+    "robust_sigmas": [
+        0.15,
+        0.2,
+        0.25
+    ],
+    "run_mode": "benchmark",
+    "scenario_pairs": [],
+    "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+    ],
+    "sigma_bars": [
+        0.1,
+        0.15,
+        0.2,
+        0.25,
+        0.3
+    ],
+    "sigma_true": 0.2,
+    "training_regimes": [
+        "oracle",
+        "robust"
+    ]
+}

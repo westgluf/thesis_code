@@ -1,0 +1,48 @@
+{
+  "description": "(eta=1.9, MSE) decomposition corner",
+  "canonical_n100": {
+    "gamma": 0.360302,
+    "es95_bs": 11.116673,
+    "es95_dh": 10.756371,
+    "source": "figures/diagnostic_controls_results.json[C][dh_mse]"
+  },
+  "n400_per_seed": {
+    "7721": {
+      "es95_bs": 9.729268074035645,
+      "es95_dh": 9.392521858215332,
+      "gamma": 0.3367462158203125
+    },
+    "7722": {
+      "es95_bs": 9.766430854797363,
+      "es95_dh": 9.284738540649414,
+      "gamma": 0.4816923141479492
+    },
+    "7723": {
+      "es95_bs": 9.560129165649414,
+      "es95_dh": 9.063879013061523,
+      "gamma": 0.4962501525878906
+    }
+  },
+  "n400_aggregated": {
+    "gamma_mean": 0.4382295608520508,
+    "gamma_std": 0.08818806412510702,
+    "ci_low": 0.416883028373772,
+    "ci_high": 0.5726065818072426,
+    "es95_bs": 9.68527603149414,
+    "es95_dh": 9.24704647064209
+  },
+  "comparison": {
+    "delta_abs": 0.07792756085205077,
+    "delta_rel": 0.21628400855902685,
+    "canonical_in_ci": false,
+    "sign_preserved": true
+  },
+  "cell_verdict": "CELL_COLLAPSED",
+  "cell_name": "B",
+  "seeds": [
+    7721,
+    7722,
+    7723
+  ],
+  "wall_clock_s": 8928.360921292
+}

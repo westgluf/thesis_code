@@ -1,0 +1,15 @@
+# Reproducibility-critical pin set per dissertation Appendix A.7.
+# Python: 3.14.3 (canonical, byte-identical); accepts 3.11–3.14
+# for "within Monte Carlo noise" reproducibility (see pyproject.toml
+# `requires-python = ">=3.11,<3.15"`).
+# The four pins below MUST match exactly for byte-identical results.
+
+torch==2.10.0
+numpy==2.4.3
+scipy==1.17.1
+
+# The unpinned dependencies below are I/O / plotting utilities and
+# do not affect numerical reproducibility:
+matplotlib>=3.8
+PyYAML>=6.0
+tqdm>=4.65

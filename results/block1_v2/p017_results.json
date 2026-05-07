@@ -1,0 +1,195 @@
+{
+  "meta": {
+    "script": "deep_hedging/experiments/p017_rerun.py",
+    "git_commit": "9cc906628e3c2db62b2eba6211e1c8c35987df01",
+    "timestamp": "2026-04-23T10:31:06",
+    "n_sim": 400,
+    "seeds_by_cell": {
+      "A": [
+        7711,
+        7712,
+        7713
+      ],
+      "B": [
+        7721,
+        7722,
+        7723
+      ],
+      "C": [
+        7731,
+        7732,
+        7733
+      ],
+      "D": [
+        7741,
+        7742,
+        7743
+      ]
+    },
+    "n_test": 50000,
+    "bootstrap_draws": 1000
+  },
+  "cells": {
+    "A": {
+      "description": "(eta=0, MSE) decomposition corner",
+      "canonical_n100": {
+        "gamma": -0.020362,
+        "es95_bs": 1.764054,
+        "es95_dh": 1.784416,
+        "source": "figures/diagnostic_controls_results.json[A_prime]"
+      },
+      "n400_per_seed": {
+        "7711": {
+          "es95_bs": 0.9041519165039062,
+          "es95_dh": 0.8969826102256775,
+          "gamma": 0.00716930627822876
+        },
+        "7712": {
+          "es95_bs": 0.9395495653152466,
+          "es95_dh": 0.9785587787628174,
+          "gamma": -0.0390092134475708
+        },
+        "7713": {
+          "es95_bs": 0.9562497138977051,
+          "es95_dh": 0.9921368360519409,
+          "gamma": -0.03588712215423584
+        }
+      },
+      "n400_aggregated": {
+        "gamma_mean": -0.022575676441192627,
+        "gamma_std": 0.025807166858161458,
+        "ci_low": -0.10938870833823705,
+        "ci_high": -0.0664861220726693,
+        "es95_bs": 0.9333170652389526,
+        "es95_dh": 0.9558927416801453
+      },
+      "comparison": {
+        "delta_abs": -0.0022136764411926253,
+        "delta_rel": -0.10871606134387139,
+        "canonical_in_ci": false,
+        "sign_preserved": true
+      },
+      "cell_verdict": "CELL_MODESTLY_SHIFTED",
+      "cell_name": "A",
+      "seeds": [
+        7711,
+        7712,
+        7713
+      ],
+      "wall_clock_s": 9381.914047708
+    },
+    "B": {
+      "description": "(eta=1.9, MSE) decomposition corner",
+      "canonical_n100": {
+        "gamma": 0.360302,
+        "es95_bs": 11.116673,
+        "es95_dh": 10.756371,
+        "source": "figures/diagnostic_controls_results.json[C][dh_mse]"
+      },
+      "n400_per_seed": {
+        "7721": {
+          "es95_bs": 9.729268074035645,
+          "es95_dh": 9.392521858215332,
+          "gamma": 0.3367462158203125
+        },
+        "7722": {
+          "es95_bs": 9.766430854797363,
+          "es95_dh": 9.284738540649414,
+          "gamma": 0.4816923141479492
+        },
+        "7723": {
+          "es95_bs": 9.560129165649414,
+          "es95_dh": 9.063879013061523,
+          "gamma": 0.4962501525878906
+        }
+      },
+      "n400_aggregated": {
+        "gamma_mean": 0.4382295608520508,
+        "gamma_std": 0.08818806412510702,
+        "ci_low": 0.416883028373772,
+        "ci_high": 0.5726065818072426,
+        "es95_bs": 9.68527603149414,
+        "es95_dh": 9.24704647064209
+      },
+      "comparison": {
+        "delta_abs": 0.07792756085205077,
+        "delta_rel": 0.21628400855902685,
+        "canonical_in_ci": false,
+        "sign_preserved": true
+      },
+      "cell_verdict": "CELL_COLLAPSED",
+      "cell_name": "B",
+      "seeds": [
+        7721,
+        7722,
+        7723
+      ],
+      "wall_clock_s": 8928.360921292
+    },
+    "C": {
+      "description": "H2 representative (lambda=0.001)",
+      "canonical_n100": {
+        "gamma": 1.080103,
+        "es95_bs": 11.491324,
+        "es95_dh": 10.411222,
+        "source": "figures/h2_grid_extension.json[grid][100][0.001]"
+      },
+      "variant_C_match": {
+        "n_rebal_effective": 400,
+        "es95_bs": 10.588311195373535,
+        "es95_dh": 9.009127616882324,
+        "gamma": 1.579183578491211,
+        "ci_low": 1.459885371857005,
+        "ci_high": 1.6991071647722293
+      },
+      "variant_C_subsample": {
+        "n_rebal_effective": 100,
+        "es95_bs": 10.441351890563965,
+        "es95_dh": 9.23949909210205,
+        "gamma": 1.201852798461914,
+        "ci_low": 1.064169944005758,
+        "ci_high": 1.3472334147630005
+      },
+      "cell_verdict": "CELL_PRESERVED",
+      "h2_confounding_assessment": "n_sim=n_rebal in canonical H2. C-subsample tests n_sim=400 with n_rebal=100, isolating simulation bias from hedging frequency.",
+      "cell_name": "C",
+      "seeds": [
+        7731,
+        7732,
+        7733
+      ],
+      "wall_clock_s": 16419.02379675
+    },
+    "D": {
+      "description": "Transfer learning GBM-pretrained on rBergomi",
+      "canonical_n100": {
+        "gamma": 0.393865,
+        "es95_bs": 11.494313,
+        "es95_dh": 11.100449,
+        "source": "figures/unified_baseline_results.json[DH GBM-pretrained]"
+      },
+      "n400_results": {
+        "es95_bs": 9.693666458129883,
+        "es95_dh": 9.299220085144043,
+        "gamma": 0.39444637298583984,
+        "ci_low": 0.3617024289295295,
+        "ci_high": 0.426091217973366
+      },
+      "comparison": {
+        "delta_abs": 0.0005813729858398231,
+        "delta_rel": 0.0014760717145172763,
+        "canonical_in_ci": true,
+        "sign_preserved": true
+      },
+      "cell_verdict": "CELL_PRESERVED",
+      "cell_name": "D",
+      "seeds": [
+        7741,
+        7742,
+        7743
+      ],
+      "wall_clock_s": 63.158508041873574
+    }
+  },
+  "global_verdict": "FAIL"
+}

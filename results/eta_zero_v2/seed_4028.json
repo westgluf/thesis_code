@@ -1,0 +1,23 @@
+{
+  "seed": 4028,
+  "es95_bs": 1.9921738415540189,
+  "es95_dh": 1.7628136102306895,
+  "gamma_arch": 0.2293602313233294,
+  "mean_pl_bs": -0.11648568044489745,
+  "std_pl_bs": 0.8113232027717509,
+  "mean_pl_dh": -0.11902131192727827,
+  "std_pl_dh": 0.9210433871289407,
+  "p0": 9.243611629019822,
+  "p0_theoretical_bs": 9.353615595571242,
+  "p0_empirical_vs_bs_abs": 0.1100039665514192,
+  "variance_max_abs_deviation": 0.0,
+  "train_time_s": 2211.3487067499664,
+  "wall_clock_s": 2217.44675708306,
+  "best_epoch": 78,
+  "best_val_risk": 1.7349484140268796,
+  "final_train_risk": 1.7684068378003004,
+  "final_val_risk": 1.8687341621747269,
+  "first_weight_sum": -7.012188911437988,
+  "_pnl_bs_np": null,
+  "_pnl_dh_np": null
+}

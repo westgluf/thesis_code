@@ -1,0 +1,30 @@
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# OS / editors
+.DS_Store
+.ipynb_checkpoints/
+.idea/
+.vscode/
+
+# Tooling caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Backups / scratch
+*.bak*
+*.tmp
+
+# NOTE: results/ and archive/ are deliberately NOT gitignored.
+# The dissertation's Appendix A reproducibility protocol depends on
+# the JSON files in results/ being versioned alongside the code.
+# Section 6.2 raw per-cell outputs (~7 GB) are NOT pushed; they are
+# regenerable via `python -m src.run_benchmark_gbm_grid`.
